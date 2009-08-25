@@ -1,0 +1,18 @@
+deadbeef (0.1.1-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Mon, 24 Aug 2009 00:20:26 +0600
+
+deadbeef (0.1-2) unstable; urgency=low
+
+  * Fixed volume control.
+  * Fixed bug in cvorbis_init preventing some songs from playing.
+
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sat, 22 Aug 2009 02:41:00 +0600
+
+deadbeef (0.1-1) unstable; urgency=low
+
+  * Initial release.
+
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sat, 22 Aug 2009 02:39:32 +0600

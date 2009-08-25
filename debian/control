@@ -1,0 +1,44 @@
+Source: deadbeef
+Section: sound
+Priority: optional
+Maintainer: Alexey Smirnov <alexey.smirnov@gmx.com>
+Build-Depends: debhelper (>= 7),
+               quilt,
+               autotools-dev,
+               libgtk2.0-dev,
+               libmad0-dev,
+               libvorbis-dev,
+               libogg-dev,
+               libsamplerate0-dev,
+               libflac-dev,
+               libasound2-dev
+Standards-Version: 3.7.3
+Homepage: http://deadbeef.sourceforge.net/
+
+Package: deadbeef
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: ultimate music player for GNU/Linux systems
+ DeaDBeeF (as in 0xDEADBEEF) is an audio player for GNU/Linux systems with X11.
+ .
+ Current version features:
+ .
+  * written in C99 except sid module, because of libsidplay2, which only has a
+    C++ API (though some 3rd party libraries are entirely in C++)
+  * mp3, ogg vorbis, flac
+  * reading id3 v1, v2.2, v2.3, v2.4, apev2, xing/info tags for mp3
+  * character set detection for non-unicode id3 tags - supports cp1251
+    and iso8859-1
+  * unicode tags are fully supported as well (both utf8 and ucs2)
+  * cuesheet support for mp3, ogg and flac
+  * sid and some popular chiptune formats like nsf
+  * tracker modules like mod, s3m, it, xm, etc
+  * HVSC song length database support for sid
+  * gtk2 interface with custom highly speed/memory optimized widgets
+  * no GNOME or KDE dependencies - just gtk2 and several small libraries
+  * minimize to tray, with scrollwheel volume control
+  * drag and drop, both inside of playlist, and from filemanagers and such
+  * control playback from command line (allows global hotkeys using xbindkeys)
+  * seeking works in all supported formats
+  * duration calculation is as precise as possible for vbr mp3
+    files (with and without xing/info tags)
