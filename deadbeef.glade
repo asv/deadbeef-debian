@@ -1,0 +1,990 @@
+<?xml version="1.0" standalone="no"?> <!--*- mode: xml -*-->
+<!DOCTYPE glade-interface SYSTEM "http://glade.gnome.org/glade-2.0.dtd">
+
+<glade-interface>
+
+<widget class="GtkWindow" id="mainwin">
+  <property name="visible">True</property>
+  <property name="events">GDK_KEY_PRESS_MASK</property>
+  <property name="title" translatable="yes">DeaDBeeF</property>
+  <property name="type">GTK_WINDOW_TOPLEVEL</property>
+  <property name="window_position">GTK_WIN_POS_NONE</property>
+  <property name="modal">False</property>
+  <property name="default_width">500</property>
+  <property name="default_height">300</property>
+  <property name="resizable">True</property>
+  <property name="destroy_with_parent">False</property>
+  <property name="icon">play_24.png</property>
+  <property name="icon_name"></property>
+  <property name="decorated">True</property>
+  <property name="skip_taskbar_hint">False</property>
+  <property name="skip_pager_hint">False</property>
+  <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
+  <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+  <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
+  <signal name="key_press_event" handler="on_mainwin_key_press_event" last_modification_time="Thu, 30 Jul 2009 21:14:26 GMT"/>
+  <signal name="delete_event" handler="on_mainwin_delete_event" last_modification_time="Thu, 13 Aug 2009 20:35:55 GMT"/>
+  <signal name="configure_event" handler="on_mainwin_configure_event" last_modification_time="Sun, 23 Aug 2009 15:26:53 GMT"/>
+
+  <child>
+    <widget class="GtkVBox" id="vbox1">
+      <property name="visible">True</property>
+      <property name="homogeneous">False</property>
+      <property name="spacing">0</property>
+
+      <child>
+	<widget class="GtkMenuBar" id="menubar1">
+	  <property name="visible">True</property>
+	  <property name="pack_direction">GTK_PACK_DIRECTION_LTR</property>
+	  <property name="child_pack_direction">GTK_PACK_DIRECTION_LTR</property>
+
+	  <child>
+	    <widget class="GtkMenuItem" id="menuitem1">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">_File</property>
+	      <property name="use_underline">True</property>
+
+	      <child>
+		<widget class="GtkMenu" id="menuitem1_menu">
+
+		  <child>
+		    <widget class="GtkImageMenuItem" id="open">
+		      <property name="visible">True</property>
+		      <property name="label">gtk-open</property>
+		      <property name="use_stock">True</property>
+		      <signal name="activate" handler="on_open_activate" last_modification_time="Sat, 04 Jul 2009 12:57:58 GMT"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkSeparatorMenuItem" id="separator2">
+		      <property name="visible">True</property>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="add_files">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Add files</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_add_files_activate" last_modification_time="Sat, 04 Jul 2009 13:04:01 GMT"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="add_folder1">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Add folder</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_add_folder1_activate" last_modification_time="Sat, 04 Jul 2009 13:04:01 GMT"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkSeparatorMenuItem" id="separatormenuitem1">
+		      <property name="visible">True</property>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkImageMenuItem" id="quit1">
+		      <property name="visible">True</property>
+		      <property name="label">gtk-quit</property>
+		      <property name="use_stock">True</property>
+		      <signal name="activate" handler="on_quit1_activate" last_modification_time="Sat, 04 Jul 2009 12:57:58 GMT"/>
+		    </widget>
+		  </child>
+		</widget>
+	      </child>
+	    </widget>
+	  </child>
+
+	  <child>
+	    <widget class="GtkMenuItem" id="edit1">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">Edit</property>
+	      <property name="use_underline">True</property>
+
+	      <child>
+		<widget class="GtkMenu" id="edit1_menu">
+
+		  <child>
+		    <widget class="GtkImageMenuItem" id="clear1">
+		      <property name="visible">True</property>
+		      <property name="label">gtk-clear</property>
+		      <property name="use_stock">True</property>
+		      <signal name="activate" handler="on_clear1_activate" last_modification_time="Sat, 04 Jul 2009 13:04:01 GMT"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkImageMenuItem" id="select_all1">
+		      <property name="visible">True</property>
+		      <property name="label">gtk-select-all</property>
+		      <property name="use_stock">True</property>
+		      <signal name="activate" handler="on_select_all1_activate" last_modification_time="Sat, 04 Jul 2009 13:04:01 GMT"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="selection1">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Selection</property>
+		      <property name="use_underline">True</property>
+
+		      <child>
+			<widget class="GtkMenu" id="selection1_menu">
+
+			  <child>
+			    <widget class="GtkImageMenuItem" id="remove1">
+			      <property name="visible">True</property>
+			      <property name="label">gtk-remove</property>
+			      <property name="use_stock">True</property>
+			      <signal name="activate" handler="on_remove1_activate" last_modification_time="Sat, 04 Jul 2009 13:04:01 GMT"/>
+			    </widget>
+			  </child>
+
+			  <child>
+			    <widget class="GtkMenuItem" id="crop1">
+			      <property name="visible">True</property>
+			      <property name="label" translatable="yes">Crop</property>
+			      <property name="use_underline">True</property>
+			      <signal name="activate" handler="on_crop1_activate" last_modification_time="Sat, 04 Jul 2009 13:04:01 GMT"/>
+			    </widget>
+			  </child>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+		</widget>
+	      </child>
+	    </widget>
+	  </child>
+
+	  <child>
+	    <widget class="GtkMenuItem" id="playlist1">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">Playlist</property>
+	      <property name="use_underline">True</property>
+
+	      <child>
+		<widget class="GtkMenu" id="playlist1_menu">
+
+		  <child>
+		    <widget class="GtkMenuItem" id="playlist_load">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Load</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_playlist_load_activate" last_modification_time="Sun, 09 Aug 2009 19:04:52 GMT"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="playlist_save">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Save</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_playlist_save_activate" last_modification_time="Sun, 09 Aug 2009 19:04:52 GMT"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="playlist_save_as">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Save As</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_playlist_save_as_activate" last_modification_time="Sun, 09 Aug 2009 19:04:52 GMT"/>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="order1">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Order</property>
+		      <property name="use_underline">True</property>
+
+		      <child>
+			<widget class="GtkMenu" id="order1_menu">
+
+			  <child>
+			    <widget class="GtkRadioMenuItem" id="order_linear">
+			      <property name="visible">True</property>
+			      <property name="label" translatable="yes">Linear</property>
+			      <property name="use_underline">True</property>
+			      <property name="active">True</property>
+			      <signal name="activate" handler="on_order_linear_activate" last_modification_time="Sat, 08 Aug 2009 12:26:33 GMT"/>
+			    </widget>
+			  </child>
+
+			  <child>
+			    <widget class="GtkRadioMenuItem" id="order_shuffle">
+			      <property name="visible">True</property>
+			      <property name="label" translatable="yes">Shuffle</property>
+			      <property name="use_underline">True</property>
+			      <property name="active">False</property>
+			      <property name="group">order_linear</property>
+			      <signal name="activate" handler="on_order_shuffle_activate" last_modification_time="Fri, 21 Aug 2009 16:46:02 GMT"/>
+			    </widget>
+			  </child>
+
+			  <child>
+			    <widget class="GtkRadioMenuItem" id="order_random">
+			      <property name="visible">True</property>
+			      <property name="label" translatable="yes">Random</property>
+			      <property name="use_underline">True</property>
+			      <property name="active">False</property>
+			      <property name="group">order_linear</property>
+			      <signal name="activate" handler="on_order_random_activate" last_modification_time="Sat, 08 Aug 2009 12:26:33 GMT"/>
+			    </widget>
+			  </child>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+
+		  <child>
+		    <widget class="GtkMenuItem" id="looping1">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">Looping</property>
+		      <property name="use_underline">True</property>
+
+		      <child>
+			<widget class="GtkMenu" id="looping1_menu">
+
+			  <child>
+			    <widget class="GtkRadioMenuItem" id="loop_all">
+			      <property name="visible">True</property>
+			      <property name="label" translatable="yes">Loop All</property>
+			      <property name="use_underline">True</property>
+			      <property name="active">True</property>
+			      <signal name="activate" handler="on_loop_all_activate" last_modification_time="Sat, 08 Aug 2009 12:26:33 GMT"/>
+			    </widget>
+			  </child>
+
+			  <child>
+			    <widget class="GtkRadioMenuItem" id="loop_single">
+			      <property name="visible">True</property>
+			      <property name="label" translatable="yes">Loop Single Song</property>
+			      <property name="use_underline">True</property>
+			      <property name="active">False</property>
+			      <property name="group">loop_all</property>
+			      <signal name="activate" handler="on_loop_single_activate" last_modification_time="Sat, 08 Aug 2009 12:26:33 GMT"/>
+			    </widget>
+			  </child>
+
+			  <child>
+			    <widget class="GtkRadioMenuItem" id="loop_disable">
+			      <property name="visible">True</property>
+			      <property name="label" translatable="yes">Don't Loop</property>
+			      <property name="use_underline">True</property>
+			      <property name="active">False</property>
+			      <property name="group">loop_all</property>
+			      <signal name="activate" handler="on_loop_disable_activate" last_modification_time="Sat, 08 Aug 2009 12:26:33 GMT"/>
+			    </widget>
+			  </child>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+		</widget>
+	      </child>
+	    </widget>
+	  </child>
+
+	  <child>
+	    <widget class="GtkMenuItem" id="menuitem4">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">_Help</property>
+	      <property name="use_underline">True</property>
+
+	      <child>
+		<widget class="GtkMenu" id="menuitem4_menu">
+
+		  <child>
+		    <widget class="GtkMenuItem" id="about1">
+		      <property name="visible">True</property>
+		      <property name="label" translatable="yes">_About</property>
+		      <property name="use_underline">True</property>
+		      <signal name="activate" handler="on_about1_activate" last_modification_time="Sat, 04 Jul 2009 12:57:58 GMT"/>
+		    </widget>
+		  </child>
+		</widget>
+	      </child>
+	    </widget>
+	  </child>
+	</widget>
+	<packing>
+	  <property name="padding">0</property>
+	  <property name="expand">False</property>
+	  <property name="fill">False</property>
+	</packing>
+      </child>
+
+      <child>
+	<widget class="GtkHBox" id="hbox2">
+	  <property name="visible">True</property>
+	  <property name="homogeneous">False</property>
+	  <property name="spacing">0</property>
+
+	  <child>
+	    <widget class="GtkHBox" id="hbox3">
+	      <property name="visible">True</property>
+	      <property name="homogeneous">False</property>
+	      <property name="spacing">0</property>
+
+	      <child>
+		<widget class="GtkButton" id="stopbtn">
+		  <property name="visible">True</property>
+		  <property name="relief">GTK_RELIEF_NONE</property>
+		  <property name="focus_on_click">True</property>
+		  <signal name="clicked" handler="on_stopbtn_clicked" last_modification_time="Sun, 05 Jul 2009 10:48:41 GMT"/>
+
+		  <child>
+		    <widget class="GtkImage" id="image7">
+		      <property name="visible">True</property>
+		      <property name="pixbuf">stop_24.png</property>
+		      <property name="xalign">0.5</property>
+		      <property name="yalign">0.5</property>
+		      <property name="xpad">0</property>
+		      <property name="ypad">0</property>
+		    </widget>
+		  </child>
+		</widget>
+		<packing>
+		  <property name="padding">0</property>
+		  <property name="expand">False</property>
+		  <property name="fill">False</property>
+		</packing>
+	      </child>
+
+	      <child>
+		<widget class="GtkButton" id="playbtn">
+		  <property name="visible">True</property>
+		  <property name="relief">GTK_RELIEF_NONE</property>
+		  <property name="focus_on_click">True</property>
+		  <signal name="clicked" handler="on_playbtn_clicked" last_modification_time="Sun, 05 Jul 2009 10:48:53 GMT"/>
+
+		  <child>
+		    <widget class="GtkImage" id="image2">
+		      <property name="visible">True</property>
+		      <property name="pixbuf">play_24.png</property>
+		      <property name="xalign">0.5</property>
+		      <property name="yalign">0.5</property>
+		      <property name="xpad">0</property>
+		      <property name="ypad">0</property>
+		    </widget>
+		  </child>
+		</widget>
+		<packing>
+		  <property name="padding">0</property>
+		  <property name="expand">False</property>
+		  <property name="fill">False</property>
+		</packing>
+	      </child>
+
+	      <child>
+		<widget class="GtkButton" id="pausebtn">
+		  <property name="visible">True</property>
+		  <property name="relief">GTK_RELIEF_NONE</property>
+		  <property name="focus_on_click">True</property>
+		  <signal name="clicked" handler="on_pausebtn_clicked" last_modification_time="Sun, 05 Jul 2009 10:49:01 GMT"/>
+
+		  <child>
+		    <widget class="GtkImage" id="image3">
+		      <property name="visible">True</property>
+		      <property name="pixbuf">pause_24.png</property>
+		      <property name="xalign">0.5</property>
+		      <property name="yalign">0.5</property>
+		      <property name="xpad">0</property>
+		      <property name="ypad">0</property>
+		    </widget>
+		  </child>
+		</widget>
+		<packing>
+		  <property name="padding">0</property>
+		  <property name="expand">False</property>
+		  <property name="fill">False</property>
+		</packing>
+	      </child>
+
+	      <child>
+		<widget class="GtkButton" id="prevbtn">
+		  <property name="visible">True</property>
+		  <property name="relief">GTK_RELIEF_NONE</property>
+		  <property name="focus_on_click">True</property>
+		  <signal name="clicked" handler="on_prevbtn_clicked" last_modification_time="Sun, 05 Jul 2009 10:49:08 GMT"/>
+
+		  <child>
+		    <widget class="GtkImage" id="image4">
+		      <property name="visible">True</property>
+		      <property name="pixbuf">prev_24.png</property>
+		      <property name="xalign">0.5</property>
+		      <property name="yalign">0.5</property>
+		      <property name="xpad">0</property>
+		      <property name="ypad">0</property>
+		    </widget>
+		  </child>
+		</widget>
+		<packing>
+		  <property name="padding">0</property>
+		  <property name="expand">False</property>
+		  <property name="fill">False</property>
+		</packing>
+	      </child>
+
+	      <child>
+		<widget class="GtkButton" id="nextbtn">
+		  <property name="visible">True</property>
+		  <property name="relief">GTK_RELIEF_NONE</property>
+		  <property name="focus_on_click">True</property>
+		  <signal name="clicked" handler="on_nextbtn_clicked" last_modification_time="Sun, 05 Jul 2009 10:49:12 GMT"/>
+
+		  <child>
+		    <widget class="GtkImage" id="image5">
+		      <property name="visible">True</property>
+		      <property name="pixbuf">next_24.png</property>
+		      <property name="xalign">0.5</property>
+		      <property name="yalign">0.5</property>
+		      <property name="xpad">0</property>
+		      <property name="ypad">0</property>
+		    </widget>
+		  </child>
+		</widget>
+		<packing>
+		  <property name="padding">0</property>
+		  <property name="expand">False</property>
+		  <property name="fill">False</property>
+		</packing>
+	      </child>
+
+	      <child>
+		<widget class="GtkButton" id="playrand">
+		  <property name="visible">True</property>
+		  <property name="relief">GTK_RELIEF_NONE</property>
+		  <property name="focus_on_click">True</property>
+		  <signal name="clicked" handler="on_playrand_clicked" last_modification_time="Sun, 05 Jul 2009 10:49:16 GMT"/>
+
+		  <child>
+		    <widget class="GtkImage" id="image6">
+		      <property name="visible">True</property>
+		      <property name="pixbuf">random_24.png</property>
+		      <property name="xalign">0.5</property>
+		      <property name="yalign">0.5</property>
+		      <property name="xpad">0</property>
+		      <property name="ypad">0</property>
+		    </widget>
+		  </child>
+		</widget>
+		<packing>
+		  <property name="padding">0</property>
+		  <property name="expand">False</property>
+		  <property name="fill">False</property>
+		</packing>
+	      </child>
+	    </widget>
+	    <packing>
+	      <property name="padding">0</property>
+	      <property name="expand">True</property>
+	      <property name="fill">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkDrawingArea" id="volumebar">
+	      <property name="width_request">70</property>
+	      <property name="visible">True</property>
+	      <property name="events">GDK_EXPOSURE_MASK | GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+	      <signal name="button_press_event" handler="on_volumebar_button_press_event" last_modification_time="Tue, 11 Aug 2009 18:57:49 GMT"/>
+	      <signal name="button_release_event" handler="on_volumebar_button_release_event" last_modification_time="Tue, 11 Aug 2009 18:57:51 GMT"/>
+	      <signal name="configure_event" handler="on_volumebar_configure_event" last_modification_time="Tue, 11 Aug 2009 18:57:55 GMT"/>
+	      <signal name="expose_event" handler="on_volumebar_expose_event" last_modification_time="Tue, 11 Aug 2009 18:58:00 GMT"/>
+	      <signal name="motion_notify_event" handler="on_volumebar_motion_notify_event" last_modification_time="Tue, 11 Aug 2009 18:58:05 GMT"/>
+	      <signal name="scroll_event" handler="on_volumebar_scroll_event" last_modification_time="Tue, 18 Aug 2009 18:44:31 GMT"/>
+	    </widget>
+	    <packing>
+	      <property name="padding">2</property>
+	      <property name="expand">False</property>
+	      <property name="fill">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkDrawingArea" id="seekbar">
+	      <property name="width_request">200</property>
+	      <property name="visible">True</property>
+	      <property name="events">GDK_EXPOSURE_MASK | GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+	      <signal name="button_press_event" handler="on_seekbar_button_press_event" last_modification_time="Tue, 11 Aug 2009 17:47:59 GMT"/>
+	      <signal name="button_release_event" handler="on_seekbar_button_release_event" last_modification_time="Tue, 11 Aug 2009 17:48:02 GMT"/>
+	      <signal name="configure_event" handler="on_seekbar_configure_event" last_modification_time="Tue, 11 Aug 2009 17:48:06 GMT"/>
+	      <signal name="expose_event" handler="on_seekbar_expose_event" last_modification_time="Tue, 11 Aug 2009 17:48:11 GMT"/>
+	      <signal name="motion_notify_event" handler="on_seekbar_motion_notify_event" last_modification_time="Tue, 11 Aug 2009 17:48:18 GMT"/>
+	    </widget>
+	    <packing>
+	      <property name="padding">2</property>
+	      <property name="expand">False</property>
+	      <property name="fill">True</property>
+	    </packing>
+	  </child>
+	</widget>
+	<packing>
+	  <property name="padding">0</property>
+	  <property name="expand">False</property>
+	  <property name="fill">False</property>
+	</packing>
+      </child>
+
+      <child>
+	<widget class="GtkHBox" id=" ">
+	  <property name="border_width">3</property>
+	  <property name="visible">True</property>
+	  <property name="homogeneous">False</property>
+	  <property name="spacing">0</property>
+
+	  <child>
+	    <widget class="GtkVBox" id="vbox3">
+	      <property name="visible">True</property>
+	      <property name="homogeneous">False</property>
+	      <property name="spacing">0</property>
+
+	      <child>
+		<widget class="GtkDrawingArea" id="header">
+		  <property name="height_request">24</property>
+		  <property name="visible">True</property>
+		  <property name="events">GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+		  <signal name="expose_event" handler="on_header_expose_event" last_modification_time="Thu, 06 Aug 2009 14:54:29 GMT"/>
+		  <signal name="configure_event" handler="on_header_configure_event" last_modification_time="Thu, 06 Aug 2009 14:54:33 GMT"/>
+		  <signal name="realize" handler="on_header_realize" last_modification_time="Thu, 06 Aug 2009 14:54:41 GMT"/>
+		  <signal name="motion_notify_event" handler="on_header_motion_notify_event" last_modification_time="Thu, 06 Aug 2009 16:33:54 GMT"/>
+		  <signal name="button_press_event" handler="on_header_button_press_event" last_modification_time="Thu, 06 Aug 2009 16:42:32 GMT"/>
+		  <signal name="button_release_event" handler="on_header_button_release_event" last_modification_time="Thu, 06 Aug 2009 16:47:31 GMT"/>
+		</widget>
+		<packing>
+		  <property name="padding">0</property>
+		  <property name="expand">False</property>
+		  <property name="fill">True</property>
+		</packing>
+	      </child>
+
+	      <child>
+		<widget class="GtkDrawingArea" id="playlist">
+		  <property name="visible">True</property>
+		  <property name="events">GDK_EXPOSURE_MASK | GDK_POINTER_MOTION_MASK | GDK_BUTTON_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK</property>
+		  <signal name="configure_event" handler="on_playlist_configure_event" last_modification_time="Sat, 04 Jul 2009 00:03:23 GMT"/>
+		  <signal name="expose_event" handler="on_playlist_expose_event" last_modification_time="Sat, 04 Jul 2009 00:03:29 GMT"/>
+		  <signal name="realize" handler="on_playlist_realize" last_modification_time="Sat, 04 Jul 2009 00:03:36 GMT"/>
+		  <signal name="button_press_event" handler="on_playlist_button_press_event" last_modification_time="Sat, 04 Jul 2009 00:41:38 GMT"/>
+		  <signal name="scroll_event" handler="on_playlist_scroll_event" last_modification_time="Sat, 04 Jul 2009 17:16:21 GMT"/>
+		  <signal name="drag_begin" handler="on_playlist_drag_begin" last_modification_time="Fri, 31 Jul 2009 10:36:23 GMT"/>
+		  <signal name="drag_motion" handler="on_playlist_drag_motion" last_modification_time="Fri, 31 Jul 2009 10:36:30 GMT"/>
+		  <signal name="drag_drop" handler="on_playlist_drag_drop" last_modification_time="Fri, 31 Jul 2009 10:36:39 GMT"/>
+		  <signal name="drag_data_get" handler="on_playlist_drag_data_get" last_modification_time="Fri, 31 Jul 2009 10:36:43 GMT"/>
+		  <signal name="drag_end" handler="on_playlist_drag_end" last_modification_time="Fri, 31 Jul 2009 11:41:00 GMT"/>
+		  <signal name="drag_failed" handler="on_playlist_drag_failed" last_modification_time="Fri, 31 Jul 2009 11:41:05 GMT"/>
+		  <signal name="drag_leave" handler="on_playlist_drag_leave" last_modification_time="Fri, 31 Jul 2009 11:41:11 GMT"/>
+		  <signal name="button_release_event" handler="on_playlist_button_release_event" last_modification_time="Fri, 31 Jul 2009 12:20:56 GMT"/>
+		  <signal name="motion_notify_event" handler="on_playlist_motion_notify_event" last_modification_time="Fri, 31 Jul 2009 12:23:49 GMT"/>
+		  <signal name="drag_data_received" handler="on_playlist_drag_data_received" last_modification_time="Mon, 03 Aug 2009 12:07:39 GMT"/>
+		  <signal name="drag_data_delete" handler="on_playlist_drag_data_delete" last_modification_time="Mon, 03 Aug 2009 12:35:47 GMT"/>
+		</widget>
+		<packing>
+		  <property name="padding">0</property>
+		  <property name="expand">True</property>
+		  <property name="fill">True</property>
+		</packing>
+	      </child>
+	    </widget>
+	    <packing>
+	      <property name="padding">0</property>
+	      <property name="expand">True</property>
+	      <property name="fill">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkVScrollbar" id="playscroll">
+	      <property name="visible">True</property>
+	      <property name="update_policy">GTK_UPDATE_CONTINUOUS</property>
+	      <property name="inverted">False</property>
+	      <property name="adjustment">0 0 1 1 0 0</property>
+	      <signal name="value_changed" handler="on_playscroll_value_changed" last_modification_time="Sat, 04 Jul 2009 01:42:24 GMT"/>
+	    </widget>
+	    <packing>
+	      <property name="padding">0</property>
+	      <property name="expand">False</property>
+	      <property name="fill">True</property>
+	    </packing>
+	  </child>
+	</widget>
+	<packing>
+	  <property name="padding">0</property>
+	  <property name="expand">True</property>
+	  <property name="fill">True</property>
+	</packing>
+      </child>
+
+      <child>
+	<widget class="GtkStatusbar" id="statusbar">
+	  <property name="visible">True</property>
+	  <property name="has_resize_grip">True</property>
+	</widget>
+	<packing>
+	  <property name="padding">0</property>
+	  <property name="expand">False</property>
+	  <property name="fill">False</property>
+	</packing>
+      </child>
+    </widget>
+  </child>
+</widget>
+
+<widget class="GtkAboutDialog" id="aboutdialog">
+  <property name="border_width">4</property>
+  <property name="visible">True</property>
+  <property name="destroy_with_parent">True</property>
+  <property name="name" translatable="yes">DeaDBeeF</property>
+  <property name="copyright" translatable="yes">Copyright © 2009 Alexey Yakovenko</property>
+  <property name="comments" translatable="yes"></property>
+  <property name="license" translatable="yes">DeaDBeeF - ultimate music player for GNU/Linux systems with X11
+Copyright (C) 2009  Alexey Yakovenko
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+
+Note that other included libraries have separate licensing terms.
+
+
+DUMB - Dynamic Universal Music Bibliotheque, Version 0.9.3
+Copyright (C) 2001-2005 Ben Davis, Robert J Ohannessian and Julien Cugniere.
+
+
+Game_Music_Emu Version 0.5.2
+Copyright (C) 2003-2006 Shay Green.
+
+
+Functions to compute MD5 message digest of files or memory blocks
+Written by Ulrich Drepper &lt;drepper@gnu.ai.mit.edu&gt;, 1995.
+Modified by Gray Watson &lt;http://256.com/gray/&gt;, 1997.
+
+
+libsidplay2 - commodore 64 SID emulation library
+Copyright (C) Simon White and other authors.</property>
+  <property name="wrap_license">False</property>
+  <property name="website">http://deadbeef.sf.net</property>
+  <property name="website_label" translatable="yes">website</property>
+  <property name="authors">Alexey Yakovenko &lt;waker@users.sourceforge.net&gt;</property>
+  <property name="artists">Stas &quot;uncle lag&quot; Akimushkin &lt;uncle.lag@gmail.com&gt;</property>
+  <property name="translator_credits" translatable="yes" comments="TRANSLATORS: Replace this string with your names, one name per line.">translator-credits</property>
+</widget>
+
+<widget class="GtkWindow" id="searchwin">
+  <property name="width_request">600</property>
+  <property name="height_request">150</property>
+  <property name="visible">True</property>
+  <property name="events">GDK_KEY_PRESS_MASK</property>
+  <property name="title" translatable="yes">Search</property>
+  <property name="type">GTK_WINDOW_TOPLEVEL</property>
+  <property name="window_position">GTK_WIN_POS_CENTER_ALWAYS</property>
+  <property name="modal">False</property>
+  <property name="resizable">True</property>
+  <property name="destroy_with_parent">False</property>
+  <property name="decorated">True</property>
+  <property name="skip_taskbar_hint">True</property>
+  <property name="skip_pager_hint">True</property>
+  <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
+  <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+  <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
+  <signal name="key_press_event" handler="on_searchwin_key_press_event" last_modification_time="Sat, 08 Aug 2009 18:19:17 GMT"/>
+  <signal name="delete_event" handler="gtk_widget_hide_on_delete" last_modification_time="Sat, 08 Aug 2009 23:03:33 GMT"/>
+
+  <child>
+    <widget class="GtkVBox" id="vbox4">
+      <property name="border_width">4</property>
+      <property name="visible">True</property>
+      <property name="homogeneous">False</property>
+      <property name="spacing">0</property>
+
+      <child>
+	<widget class="GtkEntry" id="searchentry">
+	  <property name="visible">True</property>
+	  <property name="can_focus">True</property>
+	  <property name="editable">True</property>
+	  <property name="visibility">True</property>
+	  <property name="max_length">0</property>
+	  <property name="text" translatable="yes"></property>
+	  <property name="has_frame">True</property>
+	  <property name="invisible_char">•</property>
+	  <property name="activates_default">True</property>
+	  <signal name="changed" handler="on_searchentry_changed" last_modification_time="Sat, 08 Aug 2009 18:18:17 GMT"/>
+	</widget>
+	<packing>
+	  <property name="padding">0</property>
+	  <property name="expand">False</property>
+	  <property name="fill">False</property>
+	</packing>
+      </child>
+
+      <child>
+	<widget class="GtkHBox" id="hbox6">
+	  <property name="visible">True</property>
+	  <property name="homogeneous">False</property>
+	  <property name="spacing">0</property>
+
+	  <child>
+	    <widget class="GtkVBox" id="vbox5">
+	      <property name="visible">True</property>
+	      <property name="homogeneous">False</property>
+	      <property name="spacing">0</property>
+
+	      <child>
+		<widget class="GtkDrawingArea" id="searchheader">
+		  <property name="height_request">24</property>
+		  <property name="visible">True</property>
+		  <property name="events">GDK_EXPOSURE_MASK | GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+		  <signal name="button_press_event" handler="on_header_button_press_event" last_modification_time="Sat, 08 Aug 2009 22:38:34 GMT"/>
+		  <signal name="button_release_event" handler="on_header_button_release_event" last_modification_time="Sat, 08 Aug 2009 22:38:38 GMT"/>
+		  <signal name="configure_event" handler="on_header_configure_event" last_modification_time="Sat, 08 Aug 2009 22:38:42 GMT"/>
+		  <signal name="expose_event" handler="on_header_expose_event" last_modification_time="Sat, 08 Aug 2009 22:38:46 GMT"/>
+		  <signal name="motion_notify_event" handler="on_header_motion_notify_event" last_modification_time="Sat, 08 Aug 2009 22:38:49 GMT"/>
+		</widget>
+		<packing>
+		  <property name="padding">0</property>
+		  <property name="expand">False</property>
+		  <property name="fill">True</property>
+		</packing>
+	      </child>
+
+	      <child>
+		<widget class="GtkDrawingArea" id="searchlist">
+		  <property name="visible">True</property>
+		  <property name="can_default">True</property>
+		  <property name="has_default">True</property>
+		  <property name="events">GDK_EXPOSURE_MASK | GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_KEY_PRESS_MASK | GDK_KEY_RELEASE_MASK</property>
+		  <signal name="button_press_event" handler="on_playlist_button_press_event" last_modification_time="Sat, 08 Aug 2009 22:37:04 GMT"/>
+		  <signal name="configure_event" handler="on_searchlist_configure_event" last_modification_time="Sat, 08 Aug 2009 18:51:52 GMT"/>
+		  <signal name="expose_event" handler="on_playlist_expose_event" last_modification_time="Sat, 08 Aug 2009 22:36:26 GMT"/>
+		  <signal name="scroll_event" handler="on_playlist_scroll_event" last_modification_time="Sat, 08 Aug 2009 22:36:45 GMT"/>
+		  <signal name="realize" handler="on_searchlist_realize" last_modification_time="Sat, 08 Aug 2009 19:12:45 GMT"/>
+		  <signal name="button_release_event" handler="on_playlist_button_release_event" last_modification_time="Sat, 08 Aug 2009 22:37:24 GMT"/>
+		  <signal name="motion_notify_event" handler="on_playlist_motion_notify_event" last_modification_time="Sat, 08 Aug 2009 22:38:04 GMT"/>
+		</widget>
+		<packing>
+		  <property name="padding">0</property>
+		  <property name="expand">True</property>
+		  <property name="fill">True</property>
+		</packing>
+	      </child>
+	    </widget>
+	    <packing>
+	      <property name="padding">0</property>
+	      <property name="expand">True</property>
+	      <property name="fill">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkVScrollbar" id="searchscroll">
+	      <property name="visible">True</property>
+	      <property name="update_policy">GTK_UPDATE_CONTINUOUS</property>
+	      <property name="inverted">False</property>
+	      <property name="adjustment">0 0 1 1 0 0</property>
+	      <signal name="value_changed" handler="on_playscroll_value_changed" last_modification_time="Sat, 08 Aug 2009 23:47:34 GMT"/>
+	    </widget>
+	    <packing>
+	      <property name="padding">0</property>
+	      <property name="expand">False</property>
+	      <property name="fill">True</property>
+	    </packing>
+	  </child>
+	</widget>
+	<packing>
+	  <property name="padding">0</property>
+	  <property name="expand">True</property>
+	  <property name="fill">True</property>
+	</packing>
+      </child>
+    </widget>
+  </child>
+</widget>
+
+<widget class="GtkMenu" id="traymenu">
+
+  <child>
+    <widget class="GtkImageMenuItem" id="stop1">
+      <property name="visible">True</property>
+      <property name="label">gtk-media-stop</property>
+      <property name="use_stock">True</property>
+      <signal name="activate" handler="on_stopbtn_clicked" last_modification_time="Sun, 16 Aug 2009 14:48:58 GMT"/>
+    </widget>
+  </child>
+
+  <child>
+    <widget class="GtkImageMenuItem" id="play1">
+      <property name="visible">True</property>
+      <property name="label">gtk-media-play</property>
+      <property name="use_stock">True</property>
+      <signal name="activate" handler="on_playbtn_clicked" last_modification_time="Sun, 16 Aug 2009 14:48:58 GMT"/>
+    </widget>
+  </child>
+
+  <child>
+    <widget class="GtkImageMenuItem" id="pause1">
+      <property name="visible">True</property>
+      <property name="label">gtk-media-pause</property>
+      <property name="use_stock">True</property>
+      <signal name="activate" handler="on_pausebtn_clicked" last_modification_time="Sun, 16 Aug 2009 14:48:58 GMT"/>
+    </widget>
+  </child>
+
+  <child>
+    <widget class="GtkImageMenuItem" id="previous1">
+      <property name="visible">True</property>
+      <property name="label">gtk-media-previous</property>
+      <property name="use_stock">True</property>
+      <signal name="activate" handler="on_prevbtn_clicked" last_modification_time="Sun, 16 Aug 2009 14:48:58 GMT"/>
+    </widget>
+  </child>
+
+  <child>
+    <widget class="GtkImageMenuItem" id="next1">
+      <property name="visible">True</property>
+      <property name="label">gtk-media-next</property>
+      <property name="use_stock">True</property>
+      <signal name="activate" handler="on_nextbtn_clicked" last_modification_time="Sun, 16 Aug 2009 14:48:58 GMT"/>
+    </widget>
+  </child>
+
+  <child>
+    <widget class="GtkMenuItem" id="play_random1">
+      <property name="visible">True</property>
+      <property name="label" translatable="yes">Play Random</property>
+      <property name="use_underline">True</property>
+      <signal name="activate" handler="on_playrand_clicked" last_modification_time="Sun, 16 Aug 2009 14:48:58 GMT"/>
+    </widget>
+  </child>
+
+  <child>
+    <widget class="GtkSeparatorMenuItem" id="separator4">
+      <property name="visible">True</property>
+    </widget>
+  </child>
+
+  <child>
+    <widget class="GtkImageMenuItem" id="about2">
+      <property name="visible">True</property>
+      <property name="label">gtk-about</property>
+      <property name="use_stock">True</property>
+      <signal name="activate" handler="on_about1_activate" last_modification_time="Sun, 16 Aug 2009 14:44:07 GMT"/>
+    </widget>
+  </child>
+
+  <child>
+    <widget class="GtkSeparatorMenuItem" id="separator3">
+      <property name="visible">True</property>
+    </widget>
+  </child>
+
+  <child>
+    <widget class="GtkImageMenuItem" id="quit2">
+      <property name="visible">True</property>
+      <property name="label">gtk-quit</property>
+      <property name="use_stock">True</property>
+      <signal name="activate" handler="on_quit1_activate" last_modification_time="Sun, 16 Aug 2009 14:45:24 GMT"/>
+    </widget>
+  </child>
+</widget>
+
+<widget class="GtkWindow" id="addprogress">
+  <property name="visible">True</property>
+  <property name="title" translatable="yes">Adding files...</property>
+  <property name="type">GTK_WINDOW_TOPLEVEL</property>
+  <property name="window_position">GTK_WIN_POS_CENTER_ON_PARENT</property>
+  <property name="modal">False</property>
+  <property name="resizable">True</property>
+  <property name="destroy_with_parent">False</property>
+  <property name="decorated">True</property>
+  <property name="skip_taskbar_hint">True</property>
+  <property name="skip_pager_hint">True</property>
+  <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
+  <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
+  <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
+  <signal name="delete_event" handler="on_addprogress_delete_event" last_modification_time="Sun, 16 Aug 2009 17:20:03 GMT"/>
+
+  <child>
+    <widget class="GtkVBox" id="vbox6">
+      <property name="border_width">4</property>
+      <property name="visible">True</property>
+      <property name="homogeneous">False</property>
+      <property name="spacing">0</property>
+
+      <child>
+	<widget class="GtkEntry" id="progresstitle">
+	  <property name="width_request">500</property>
+	  <property name="visible">True</property>
+	  <property name="editable">False</property>
+	  <property name="visibility">True</property>
+	  <property name="max_length">0</property>
+	  <property name="text" translatable="yes"></property>
+	  <property name="has_frame">True</property>
+	  <property name="invisible_char">•</property>
+	  <property name="activates_default">False</property>
+	</widget>
+	<packing>
+	  <property name="padding">0</property>
+	  <property name="expand">True</property>
+	  <property name="fill">False</property>
+	</packing>
+      </child>
+
+      <child>
+	<widget class="GtkHBox" id="hbox7">
+	  <property name="visible">True</property>
+	  <property name="homogeneous">False</property>
+	  <property name="spacing">0</property>
+
+	  <child>
+	    <placeholder/>
+	  </child>
+
+	  <child>
+	    <widget class="GtkButton" id="button1">
+	      <property name="width_request">83</property>
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes">Abort</property>
+	      <property name="use_underline">True</property>
+	      <property name="relief">GTK_RELIEF_NORMAL</property>
+	      <property name="focus_on_click">True</property>
+	      <signal name="clicked" handler="on_progress_abort" last_modification_time="Sun, 16 Aug 2009 17:17:12 GMT"/>
+	    </widget>
+	    <packing>
+	      <property name="padding">0</property>
+	      <property name="expand">False</property>
+	      <property name="fill">False</property>
+	    </packing>
+	  </child>
+	</widget>
+	<packing>
+	  <property name="padding">2</property>
+	  <property name="expand">False</property>
+	  <property name="fill">True</property>
+	</packing>
+      </child>
+    </widget>
+  </child>
+</widget>
+
+</glade-interface>
