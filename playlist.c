@@ -61,7 +61,7 @@ pl_free (void) {
 }
 
 static char *
-pl_cue_skipspaces (char *p) {
+pl_cue_skipspaces (uint8_t *p) {
     while (*p && *p <= ' ') {
         p++;
     }
@@ -182,7 +182,6 @@ pl_insert_cue (playItem_t *after, const char *fname, codec_t *codec, const char 
         }
         else if (!strncmp (p, "FILE ", 5)) {
             pl_get_qvalue_from_cue (p + 5, file);
-//            printf ("got filename: %s\n", file);
             // copy directory name
             char fname[1024];
             int len = strlen (cuename);
@@ -584,7 +583,7 @@ int
 pl_set_current (playItem_t *it) {
     int ret = 0;
     int from = pl_get_idx_of (playlist_current_ptr);
-    int to = pl_get_idx_of (it);
+    int to = it ? pl_get_idx_of (it) : -1;
 #if 0
     // this produces some kind of bug in the beginning of track
     if (it == playlist_current_ptr) {
@@ -617,9 +616,9 @@ pl_set_current (playItem_t *it) {
     }
     if (it) {
         pl_item_copy (&playlist_current, it);
+        it->played = 1;
     }
     codec_unlock ();
-    it->played = 1;
     messagepump_push (M_SONGCHANGED, 0, from, to);
     return ret;
 }
