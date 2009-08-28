@@ -42,6 +42,7 @@
 #include "search.h"
 #include "progress.h"
 #include "drawing.h"
+#include "session.h"
 
 // orange on dark color scheme
 float colo_dark_orange[COLO_COUNT][3] = {
@@ -390,6 +391,7 @@ gtkpl_configure (gtkplaylist_t *ps) {
         ps->fmtcache = NULL;
     }
     ps->nvisiblerows = ceil (widget->allocation.height / (float)rowheight);
+    ps->nvisiblefullrows = floor (widget->allocation.height / (float)rowheight);
     ps->backbuf = gdk_pixmap_new (widget->window, widget->allocation.width, widget->allocation.height, -1);
 
     gtkpl_draw_playlist (ps, 0, 0, widget->allocation.width, widget->allocation.height);
@@ -489,7 +491,8 @@ gtkpl_mouse1_pressed (gtkplaylist_t *ps, int state, int ex, int ey, double time)
         // doubleclick - play this item
         if (ps->row != -1) {
             playItem_t *it = gtkpl_get_for_idx (ps, ps->row);
-            messagepump_push (M_PLAYSONGNUM, 0, pl_get_idx_of (it), 0);
+            it->selected = 1;
+            messagepump_push (M_PLAYSONGNUM, 0, ps->row, 0);
             return;
         }
 
@@ -741,14 +744,20 @@ gtkpl_playsongnum (int idx) {
 
 void
 gtkpl_songchanged (gtkplaylist_t *ps, int from, int to) {
-    if (from >= 0 || to >= 0) {
+    if (!dragwait) {
         GtkWidget *widget = ps->playlist;
-        if (from >= 0) {
-            gtkpl_redraw_pl_row (ps, from, gtkpl_get_for_idx (ps, from));
+        if (session_get_cursor_follows_playback ()) {
+            if (to < ps->scrollpos || to >= ps->scrollpos + ps->nvisiblefullrows) {
+                gtk_range_set_value (GTK_RANGE (ps->scrollbar), to - ps->nvisiblerows/2);
+            }
         }
-        if (to >= 0) {
-            gtkpl_redraw_pl_row (ps, to, gtkpl_get_for_idx (ps, to));
-        }
+    }
+
+    if (from >= 0) {
+        gtkpl_redraw_pl_row (ps, from, gtkpl_get_for_idx (ps, from));
+    }
+    if (to >= 0) {
+        gtkpl_redraw_pl_row (ps, to, gtkpl_get_for_idx (ps, to));
     }
 }
 
@@ -1364,11 +1373,8 @@ gtkpl_playsong (gtkplaylist_t *ps) {
     if (p_ispaused ()) {
         p_unpause ();
     }
-    else if (playlist_current_ptr) {
-        p_stop ();
-        streamer_set_nextsong (gtkpl_get_idx_of (ps, playlist_current_ptr), 1);
-    }
     else if (ps->row != -1) {
+        p_stop ();
         streamer_set_nextsong (ps->row, 1);
     }
     else {
