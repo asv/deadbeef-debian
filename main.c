@@ -49,6 +49,7 @@
 #include "conf.h"
 #include "volume.h"
 #include "session.h"
+#include "plugins.h"
 
 #ifndef PREFIX
 #error PREFIX must be defined
@@ -94,17 +95,17 @@ update_songinfo (void) {
     else if (p_isstopped ()) {
         strcpy (sbtext_new, "Stopped");
     }
-    else if (playlist_current.codec) {
+    else if (playlist_current.decoder) {
         codec_lock ();
-        codec_t *c = playlist_current.codec;
+        DB_decoder_t *c = playlist_current.decoder;
         float playpos = streamer_get_playpos ();
         int minpos = playpos / 60;
         int secpos = playpos - minpos * 60;
         int mindur = playlist_current.duration / 60;
         int secdur = playlist_current.duration - mindur * 60;
         const char *mode = c->info.channels == 1 ? "Mono" : "Stereo";
-        int samplerate = c->info.samplesPerSecond;
-        int bitspersample = c->info.bitsPerSample;
+        int samplerate = c->info.samplerate;
+        int bitspersample = c->info.bps;
         songpos = playpos;
         codec_unlock ();
 
@@ -162,10 +163,10 @@ exec_command_line (const char *cmdline, int len, int filter) {
     while (parg < pend) {
         if (filter == 1) {
             if (!strcmp (parg, "--help") || !strcmp (parg, "-h")) {
-                printf ("DeaDBeeF %s Copyright (C) 2009 Alexey Yakovenko\n", VERSION);
                 printf ("Usage: deadbeef [options] [file(s)]\n");
                 printf ("Options:\n");
                 printf ("   --help  or  -h     Print help (this message) and exit\n");
+                printf ("   --version          Print version info and exit\n");
                 printf ("   --play             Start playback\n");
                 printf ("   --stop             Stop playback\n");
                 printf ("   --pause            Pause playback\n");
@@ -173,6 +174,10 @@ exec_command_line (const char *cmdline, int len, int filter) {
                 printf ("   --prev             Previous song in playlist\n");
                 printf ("   --random           Previous song in playlist\n");
                 printf ("   --queue            Append file(s) to existing playlist\n");
+                return 1;
+            }
+            else if (!strcmp (parg, "--version")) {
+                printf ("DeaDBeeF %s Copyright (C) 2009 Alexey Yakovenko\n", VERSION);
                 return 1;
             }
         }
@@ -311,6 +316,7 @@ player_thread (uintptr_t ctx) {
                 messagepump_push (M_TERMINATE, 0, 0, 0);
             }
         }
+        plug_trigger_event (DB_EV_FRAMEUPDATE);
         uint32_t msg;
         uintptr_t ctx;
         uint32_t p1;
@@ -346,6 +352,7 @@ player_thread (uintptr_t ctx) {
                 // update playlist view
                 gtkpl_songchanged (&main_playlist, p1, p2);
                 GDK_THREADS_LEAVE();
+                plug_trigger_event (DB_EV_SONGCHANGED);
                 break;
             case M_PLAYSONG:
                 gtkpl_playsong (&main_playlist);
@@ -499,11 +506,33 @@ main (int argc, char *argv[]) {
         fprintf (stderr, "unable to find home directory. stopping.\n");
         return -1;
     }
-    snprintf (defpl, 1024, "%s/.config/deadbeef/default.dbpl", homedir);
-    snprintf (sessfile, 1024, "%s/.config/deadbeef/session", homedir);
-    snprintf (confdir, 1024, "%s/.config", homedir);
+
+    char *xdg_conf_dir = getenv ("XDG_CONFIG_HOME");
+    if (xdg_conf_dir) {
+        if (snprintf (confdir, sizeof (confdir), "%s", xdg_conf_dir) > sizeof (confdir)) {
+            fprintf (stderr, "fatal: XDG_CONFIG_HOME value is too long: %s\n", xdg_conf_dir);
+            return -1;
+        }
+    }
+    else {
+        if (snprintf (confdir, sizeof (confdir), "%s/.config", homedir) > sizeof (confdir)) {
+            fprintf (stderr, "fatal: HOME value is too long: %s\n", homedir);
+            return -1;
+        }
+    }
+    if (snprintf (defpl, sizeof (defpl), "%s/deadbeef/default.dbpl", confdir) > sizeof (defpl)) {
+        fprintf (stderr, "fatal: out of memory while configuring\n");
+        return -1;
+    }
+    if (snprintf (sessfile, sizeof (sessfile), "%s/deadbeef/session", confdir) > sizeof (sessfile)) {
+        fprintf (stderr, "fatal: out of memory while configuring\n");
+        return -1;
+    }
     mkdir (confdir, 0755);
-    snprintf (dbconfdir, 1024, "%s/.config/deadbeef", homedir);
+    if (snprintf (dbconfdir, sizeof (dbconfdir), "%s/deadbeef", confdir) > sizeof (dbconfdir)) {
+        fprintf (stderr, "fatal: out of memory while configuring\n");
+        return -1;
+    }
     mkdir (dbconfdir, 0755);
 
     char cmdline[2048];
@@ -572,6 +601,7 @@ main (int argc, char *argv[]) {
     server_start ();
 
     conf_load ();
+    plug_load_all ();
     pl_load (defpl);
     session_load (sessfile);
     messagepump_init ();
@@ -621,7 +651,7 @@ main (int argc, char *argv[]) {
     gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (lookup_widget (mainwin, w)), TRUE);
     w = loopingwidgets[session_get_playlist_looping ()];
     gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (lookup_widget (mainwin, w)), TRUE);
-    gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (lookup_widget (mainwin, "cursor_follows_playback")), session_get_cursor_follows_playback () ? TRUE : FALSE);
+    gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (lookup_widget (mainwin, "scroll_follows_playback")), session_get_scroll_follows_playback () ? TRUE : FALSE);
 
     searchwin = create_searchwin ();
     gtk_window_set_transient_for (GTK_WINDOW (searchwin), GTK_WINDOW (mainwin));
@@ -651,9 +681,9 @@ main (int argc, char *argv[]) {
     p_free ();
     streamer_free ();
     codec_free_locking ();
-
     session_save (sessfile);
     pl_save (defpl);
     pl_free ();
+    plug_unload_all ();
     return 0;
 }

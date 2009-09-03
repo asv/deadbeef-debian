@@ -292,13 +292,27 @@ gtkpl_draw_pl_row (gtkplaylist_t *ps, int row, playItem_t *it) {
 
     char artistalbum[1024];
     const char *artist = pl_find_meta (it, "artist");
+    if (!artist) {
+        artist = "?";
+    }
     const char *album = pl_find_meta (it, "album");
+    if (!album) {
+        album = "?";
+    }
+    const char *track = pl_find_meta (it, "track");
+    if (!track) {
+        track = "";
+    }
+    const char *title = pl_find_meta (it, "title");
+    if (!title) {
+        title = "?";
+    }
     snprintf (artistalbum, 1024, "%s - %s", artist, album);
     const char *columns[pl_ncolumns] = {
         "",
         artistalbum,
-        pl_find_meta (it, "track"),
-        pl_find_meta (it, "title"),
+        track,
+        title,
         dur
     };
     int x = 0;
@@ -490,9 +504,11 @@ gtkpl_mouse1_pressed (gtkplaylist_t *ps, int state, int ex, int ey, double time)
             && fabs(ps->lastpos[1] - ey) < 3) {
         // doubleclick - play this item
         if (ps->row != -1) {
+            gtkplaylist_t main_playlist;
             playItem_t *it = gtkpl_get_for_idx (ps, ps->row);
             it->selected = 1;
-            messagepump_push (M_PLAYSONGNUM, 0, ps->row, 0);
+            int r = pl_get_idx_of (it);
+            messagepump_push (M_PLAYSONGNUM, 0, r, 0);
             return;
         }
 
@@ -744,9 +760,9 @@ gtkpl_playsongnum (int idx) {
 
 void
 gtkpl_songchanged (gtkplaylist_t *ps, int from, int to) {
-    if (!dragwait) {
+    if (!dragwait && to != -1) {
         GtkWidget *widget = ps->playlist;
-        if (session_get_cursor_follows_playback ()) {
+        if (session_get_scroll_follows_playback ()) {
             if (to < ps->scrollpos || to >= ps->scrollpos + ps->nvisiblefullrows) {
                 gtk_range_set_value (GTK_RANGE (ps->scrollbar), to - ps->nvisiblerows/2);
             }
@@ -776,6 +792,9 @@ gtkpl_keypress (gtkplaylist_t *ps, int keyval, int state) {
         gtkpl_draw_playlist (ps, 0, 0, widget->allocation.width, widget->allocation.height);
         gdk_draw_drawable (widget->window, widget->style->black_gc, ps->backbuf, 0, 0, 0, 0, widget->allocation.width, widget->allocation.height);
         return;
+    }
+    else if ((keyval == GDK_P || keyval == GDK_p) && (state & GDK_CONTROL_MASK)) {
+        messagepump_push (M_PAUSESONG, 0, 0, 0);
     }
     else if (keyval == GDK_Return && ps->row != -1) {
         messagepump_push (M_PLAYSONGNUM, 0, ps->row, 0);

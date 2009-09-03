@@ -1,3 +1,8 @@
+<html>
+<head>
+<title>DeaDBeeF - Ultimate Music Player For GNU/Linux</title>
+</head>
+<body>
 <a href="#news">News</a><br/>
 <a href="#about">About</a><br/>
 <a href="#license">Copying</a><br/>
@@ -8,6 +13,35 @@
 <a href="#screenshots">Screenshots</a><br/>
 
 <h1 id="news">News</h1>
+
+<h2>APE support status</h2>
+<p>2009/09/01</p>
+<p>a lot of people are asking me about whether deadbeef is going to support APE (Monkey's Audio Codec) format.</p>
+<p>indeed, support is already in plugins branch, and everyone brave enough can try it. it's not fully finished yet, but working.</p>
+<p>unique feature of deadbeef is that it supports BOTH ape decoders available for linux: libmac (unofficial port of official sdk with crappy license), and libdemac (unofficial decoder licensed under GPL, developed by <a href="http://www.rockbox.org/">rockbox</a> people)</p>
+<p>here's some interesting info:</p>
+<p>mac decoder takes extra 10 megabytes of memory for itself (that's approximately same size, as taken by whole deadbeef player with all plugins except mac decoder!)</p>
+<p>mac decoder may take up to 5 seconds to seek or start playback</p>
+<p>libdemac takes almost no memory for itself, i would say i take around 250K for streaming (which is gonna be shared with other decoders btw)</p>
+<p>libdemac is approximately 2 times slower, than libmac</p>
+<p>worst case i've seen until now was 40% cpu time on libdemac, while 20% cpu time on libmac (3GHz Xeon CPU, same .ape file with extreme compression)</p>
+<p>that's it for now!</p>
+<p>happy listening</p>
+
+<h2>One more Gentoo Ebuild</h2>
+<p>2009/08/31</h2>
+<p><a href="mailto:tonn.post@gmail.com">Anton Novikov</a> sent another ebuild for GIT version of DeaDBeeF</p>
+<p>as always, check <a href="#download">download section</a></p>
+
+<h2>Gentoo ebuild</h2>
+<p>2009/08/31</p>
+<p><a href="mailto:prodoomman@gmail.com">proDOOMman</a> sent nice ebuild for gentoo linux</p>
+<p>check <a href="#download">download section</a></p>
+
+<h2>Slackware Packages</h2>
+<p>2009/08/30</p>
+<p><a href="mailto:sftp.mtuci@gmail.com">happy user</a> provided packages for Slackware 12.1 and 12.2</p>
+<p>check <a href="#download">download section</a></p>
 
 <h2>release 0.1.1 is out!</h2>
 <p>2009/08/23</p>
@@ -90,9 +124,15 @@ implemented basic session management, window size/position, volume, playmode are
 <p>source code for version 0.1.1 <a href="http://sourceforge.net/projects/deadbeef/files/deadbeef-0.1.1.tar.gz/download">deadbeef-0.1.1.tar.gz</a></p>
 <p>Arch Linux PKGBUILD: <a href="http://aur.archlinux.org/packages.php?ID=29497">here</a></p>
 <p><b>unsupported</b> debian packages for version 0.1.1 from <a href="mailto:alexey.smirnov@gmx.com">sceptic</a>:</p>
+<p><a href="http://sourceforge.net/projects/deadbeef/files/deadbeef_0.1.1-1_i386.deb/download">i386</a>, <a href="http://sourceforge.net/projects/deadbeef/files/deadbeef_0.1.1-1_amd64.deb/download">x86_64</a></p>
+<p><b>unsupported</b> slackware packages for version 0.1.1 from <a href="mailto:sftp.mtuci@gmail.com">sftp.mtuci@gmail.com</a>:</p>
+<p><a href="http://sourceforge.net/projects/deadbeef/files/deadbeef-0.1.1-i686-slack12.1-1.tgz/download">i386 slackware 12.1</a>, <a href="http://sourceforge.net/projects/deadbeef/files/deadbeef-0.1.1-i686-slack12.2-1.tgz/download">i386 slackware 12.2</a></p>
+<p><b>unsupported</b> gentoo ebuild for version 0.1.1 from <a href="mailto:prodoomman@gmail.com">proDOOMman</a>:</p>
+<p><a href="http://sourceforge.net/projects/deadbeef/files/deadbeef-0.1.1.ebuild/download">deadbeef-0.1.1.ebuild</a></p>
+<p><b>unsupported</b> live gentoo ebuild from <a href="mailto:tonn.post@gmail.com">Anton Novikov</a>:</p>
+<p><a href="http://sourceforge.net/projects/deadbeef/files/deadbeef-9999.ebuild/download">deadbeef-9999.ebuild</a></p>
 <p>note: i have nothing to do with these packages, nor can i test them. use at your own risk</p>
 <p>contact me <b>only</b> if you built from official source package.</p>
-<p><a href="http://sourceforge.net/projects/deadbeef/files/deadbeef_0.1.1-1_i386.deb">i386</a>, <a href="http://sourceforge.net/projects/deadbeef/files/deadbeef_0.1.1-1_amd64.deb">x86_64</a></p>
 
 <h1 id='bugs'>Reporting Bugs And Requesting Features</h1>
 <p>i don't want to receive bug reports or feature requests yet. but if you really feel like it - send me an <a href="mailto:waker@users.sourceforge.net">email</a>, or come to one of our irc/jabber chats.</p>
@@ -109,4 +149,4 @@ implemented basic session management, window size/position, volume, playmode are
 
 <hr/>
 <p><a href="http://sourceforge.net/">Project Web Hosted by<img src="http://sflogo.sourceforge.net/sflogo.php?group_id=272657&amp;type=3" alt="SourceForge.net"/></a></p>
-
+</body>

@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <samplerate.h>
 #include <sys/prctl.h>
+#include <sys/time.h>
 #include "threading.h"
 #include "codec.h"
 #include "playlist.h"
@@ -31,7 +32,10 @@
 #include "messagepump.h"
 #include "messages.h"
 #include "conf.h"
+#include "plugins.h"
+#include "optmath.h"
 
+static intptr_t streamer_tid;
 static SRC_STATE *src;
 static SRC_DATA srcdata;
 static int codecleft;
@@ -82,6 +86,8 @@ streamer_thread (uintptr_t ctx) {
     codecleft = 0;
 
     while (!streaming_terminate) {
+        struct timeval tm1;
+        gettimeofday (&tm1, NULL);
         if (nextsong >= 0 && bytes_until_next_song == 0) {
             int sng = nextsong;
             int pstate = nextsong_pstate;
@@ -134,9 +140,9 @@ streamer_thread (uintptr_t ctx) {
         if (seekpos >= 0) {
             float pos = seekpos;
             seekpos = -1;
-            if (playlist_current.codec && playlist_current.codec->seek (pos) >= 0) {
+            if (playlist_current.decoder && playlist_current.decoder->seek (pos) >= 0) {
                 streamer_lock ();
-                playpos = playlist_current.codec->info.readposition;
+                playpos = playlist_current.decoder->info.readpos;
                 streambuffer_fill = 0;
                 streamer_unlock ();
                 codec_lock ();
@@ -145,12 +151,17 @@ streamer_thread (uintptr_t ctx) {
             }
         }
 
+        // read ahead at 384K per second
+        // that means 10ms per 4k block, or 40ms per 16k block
+        int alloc_time = 1000 / (96000 * 4 / 4096);
+
         streamer_lock ();
-        if (streambuffer_fill < STREAM_BUFFER_SIZE && bytes_until_next_song == 0) {
+        if (streambuffer_fill < (STREAM_BUFFER_SIZE-4096) && bytes_until_next_song == 0) {
             int sz = STREAM_BUFFER_SIZE - streambuffer_fill;
             int minsize = 4096;
             if (streambuffer_fill < 16384) {
                 minsize = 16384;
+                alloc_time *= 4;
             }
             sz = min (minsize, sz);
             assert ((sz&3) == 0);
@@ -159,8 +170,14 @@ streamer_thread (uintptr_t ctx) {
             streambuffer_fill += bytesread;
         }
         streamer_unlock ();
-        usleep (1000);
-        //printf ("fill: %d        \r", streambuffer_fill);
+        struct timeval tm2;
+        gettimeofday (&tm2, NULL);
+
+        int ms = (tm2.tv_sec*1000+tm2.tv_usec/1000) - (tm1.tv_sec*1000+tm1.tv_usec/1000);
+        alloc_time -= ms;
+        if (alloc_time > 0) {
+            usleep (alloc_time * 1000);
+        }
     }
 
     if (src) {
@@ -178,13 +195,14 @@ streamer_init (void) {
     if (!src) {
         return -1;
     }
-    thread_start (streamer_thread, 0);
+    streamer_tid = thread_start (streamer_thread, 0);
     return 0;
 }
 
 void
 streamer_free (void) {
     streaming_terminate = 1;
+    thread_join (streamer_tid);
     mutex_free (mutex);
 }
 
@@ -204,23 +222,23 @@ streamer_read_async (char *bytes, int size) {
     for (;;) {
         int bytesread = 0;
         codec_lock ();
-        codec_t *codec = playlist_current.codec;
-        if (!codec) {
+        DB_decoder_t *decoder = playlist_current.decoder;
+        if (!decoder) {
             codec_unlock ();
             break;
         }
-        if (codec->info.samplesPerSecond != -1) {
-            int nchannels = codec->info.channels;
-            int samplerate = codec->info.samplesPerSecond;
+        if (decoder->info.samplerate != -1) {
+            int nchannels = decoder->info.channels;
+            int samplerate = decoder->info.samplerate;
             // read and do SRC
-            if (codec->info.samplesPerSecond == p_get_rate ()) {
+            if (decoder->info.samplerate == p_get_rate ()) {
                 int i;
-                if (codec->info.channels == 2) {
-                    bytesread = codec->read (bytes, size);
+                if (decoder->info.channels == 2) {
+                    bytesread = decoder->read_int16 (bytes, size);
                     codec_unlock ();
                 }
                 else {
-                    bytesread = codec->read (g_readbuffer, size/2);
+                    bytesread = decoder->read_int16 (g_readbuffer, size/2);
                     codec_unlock ();
                     for (i = 0; i < size/4; i++) {
                         int16_t sample = (int16_t)(((int32_t)(((int16_t*)g_readbuffer)[i])));
@@ -240,7 +258,8 @@ streamer_read_async (char *bytes, int size) {
                 assert (src_is_valid_ratio ((double)p_get_rate ()/samplerate));
                 // read data at source samplerate (with some room for SRC)
                 int nbytes = (nsamples - codecleft) * 2 * nchannels;
-                if (nbytes < 0) {
+                int samplesize = 2;
+                if (nbytes <= 0) {
                     nbytes = 0;
                 }
                 else {
@@ -248,23 +267,51 @@ streamer_read_async (char *bytes, int size) {
 //                        printf ("FATAL: nbytes=%d, nsamples=%d, codecleft=%d, nchannels=%d, ratio=%f\n", nbytes, nsamples, codecleft, nchannels, (float)p_get_rate ()/samplerate);
 //                        assert ((nbytes & 3) == 0);
 //                    }
-                    bytesread = codec->read (g_readbuffer, nbytes);
+                    if (!decoder->read_float32) {
+                        bytesread = decoder->read_int16 (g_readbuffer, nbytes);
+                    }
+                    else {
+                        samplesize = 4;
+                    }
                 }
                 codec_unlock ();
                 // recalculate nsamples according to how many bytes we've got
-                nsamples = bytesread / (2 * nchannels) + codecleft;
-                // convert to float
-                int i;
-                float *fbuffer = g_fbuffer + codecleft*2;
-                if (nchannels == 2) {
-                    for (i = 0; i < (nsamples - codecleft) * 2; i++) {
-                        fbuffer[i] = ((int16_t *)g_readbuffer)[i]/32767.f;
+                if (nbytes != 0) {
+                    int i;
+                    if (!decoder->read_float32) {
+                        nsamples = bytesread / (samplesize * nchannels) + codecleft;
+                        // convert to float
+                        float *fbuffer = g_fbuffer + codecleft*2;
+                        if (nchannels == 2) {
+                            for (i = 0; i < (nsamples - codecleft) * 2; i++) {
+                                fbuffer[i] = ((int16_t *)g_readbuffer)[i]/32767.f;
+                            }
+                        }
+                        else if (nchannels == 1) { // convert mono to stereo
+                            for (i = 0; i < (nsamples - codecleft); i++) {
+                                fbuffer[i*2+0] = ((int16_t *)g_readbuffer)[i]/32767.f;
+                                fbuffer[i*2+1] = fbuffer[i*2+0];
+                            }
+                        }
                     }
-                }
-                else if (nchannels == 1) { // convert mono to stereo
-                    for (i = 0; i < (nsamples - codecleft); i++) {
-                        fbuffer[i*2+0] = ((int16_t *)g_readbuffer)[i]/32767.f;
-                        fbuffer[i*2+1] = fbuffer[i*2+0];
+                    else {
+                        float *fbuffer = g_fbuffer + codecleft*2;
+                        if (nchannels == 1) {
+                            codec_lock ();
+                            bytesread = decoder->read_float32 (g_readbuffer, nbytes*2);
+                            codec_unlock ();
+                            nsamples = bytesread / (samplesize * nchannels) + codecleft;
+                            for (i = 0; i < (nsamples - codecleft); i++) {
+                                fbuffer[i*2+0] = ((float *)g_readbuffer)[i];
+                                fbuffer[i*2+1] = fbuffer[i*2+0];
+                            }
+                        }
+                        else {
+                            codec_lock ();
+                            bytesread = decoder->read_float32 ((char *)fbuffer, nbytes*2);
+                            codec_unlock ();
+                            nsamples = bytesread / (samplesize * nchannels) + codecleft;
+                        }
                     }
                 }
                 //codec_lock ();
@@ -282,6 +329,7 @@ streamer_read_async (char *bytes, int size) {
                 nbytes = size;
                 int genbytes = srcdata.output_frames_gen * 4;
                 bytesread = min(size, genbytes);
+                int i;
                 for (i = 0; i < bytesread/2; i++) {
                     float sample = g_srcbuffer[i];
                     if (sample > 1) {
@@ -290,7 +338,7 @@ streamer_read_async (char *bytes, int size) {
                     if (sample < -1) {
                         sample = -1;
                     }
-                    ((int16_t*)bytes)[i] = (int16_t)(sample*32767.f);
+                    ((int16_t*)bytes)[i] = (int16_t)ftoi (sample*32767.f);
                 }
                 // calculate how many unused input samples left
                 codecleft = nsamples - srcdata.input_frames_used;
@@ -340,6 +388,10 @@ streamer_read (char *bytes, int size) {
         }
         streambuffer_fill -= sz;
         playpos += (float)sz/p_get_rate ()/4.f;
+        playlist_current.playtime += (float)sz/p_get_rate ()/4.f;
+        if (playlist_current_ptr) {
+            playlist_current_ptr->playtime = playlist_current.playtime;
+        }
         bytes_until_next_song -= sz;
         if (bytes_until_next_song < 0) {
             bytes_until_next_song = 0;

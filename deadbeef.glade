@@ -288,12 +288,12 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkCheckMenuItem" id="cursor_follows_playback">
+		    <widget class="GtkCheckMenuItem" id="scroll_follows_playback">
 		      <property name="visible">True</property>
-		      <property name="label" translatable="yes">Cursor follows playback</property>
+		      <property name="label" translatable="yes">Scroll follows playback</property>
 		      <property name="use_underline">True</property>
 		      <property name="active">True</property>
-		      <signal name="activate" handler="on_cursor_follows_playback_activate" last_modification_time="Thu, 27 Aug 2009 18:17:17 GMT"/>
+		      <signal name="activate" handler="on_scroll_follows_playback_activate" last_modification_time="Wed, 02 Sep 2009 17:46:43 GMT"/>
 		    </widget>
 		  </child>
 		</widget>
@@ -693,8 +693,12 @@ Copyright (C) Simon White and other authors.</property>
   <property name="wrap_license">False</property>
   <property name="website">http://deadbeef.sf.net</property>
   <property name="website_label" translatable="yes">website</property>
-  <property name="authors">Alexey Yakovenko &lt;waker@users.sourceforge.net&gt;</property>
-  <property name="artists">Stas &quot;uncle lag&quot; Akimushkin &lt;uncle.lag@gmail.com&gt;</property>
+  <property name="authors">Core developer: Alexey Yakovenko &lt;waker@users.sourceforge.net&gt;
+
+Hotkeys plugin: Viktor Semykin &lt;thesame.ml@gmail.com&gt;
+
+Desktop file and Debian packages: Alexey A. Smirnov &lt;alexey.smirnov@gmx.com&gt;</property>
+  <property name="artists">Button artwork: Stas &quot;uncle lag&quot; Akimushkin &lt;uncle.lag@gmail.com&gt;</property>
   <property name="translator_credits" translatable="yes" comments="TRANSLATORS: Replace this string with your names, one name per line.">translator-credits</property>
 </widget>
 

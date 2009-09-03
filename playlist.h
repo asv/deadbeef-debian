@@ -18,6 +18,8 @@
 #ifndef __PLAYLIST_H
 #define __PLAYLIST_H
 
+#include <stdint.h>
+
 typedef struct metaInfo_s {
     const char *key;
     char *value;
@@ -30,7 +32,7 @@ typedef struct metaInfo_s {
 
 typedef struct playItem_s {
     char *fname; // full pathname
-    struct codec_s *codec; // codec to use with this file
+    struct DB_decoder_s *decoder; // codec to use with this file
     int tracknum; // used for stuff like sid, nsf, cue (will be ignored by most codecs)
     float timestart; // start time of cue track, or -1
     float timeend; // end time of cue track, or -1
@@ -38,6 +40,8 @@ typedef struct playItem_s {
     int startoffset; // offset to seek to skip tags and info-headers (mp3)
     int endoffset; // offset from end of file where music data ends (mp3)
     int shufflerating; // sort order for shuffle mode
+    float playtime; // total playtime
+    time_t started_timestamp; // result of calling time(NULL)
     const char *filetype; // e.g. MP3 or OGG
     struct playItem_s *next[PL_MAX_ITERATORS]; // next item in linked list
     struct playItem_s *prev[PL_MAX_ITERATORS]; // prev item in linked list
@@ -80,6 +84,9 @@ void
 pl_item_free (playItem_t *it);
 
 void
+pl_item_copy (playItem_t *out, playItem_t *it);
+
+void
 pl_free (void);
 
 int
@@ -95,7 +102,10 @@ int
 pl_get_idx_of (playItem_t *it);
 
 playItem_t *
-pl_insert_cue (playItem_t *after, const char *cuename, struct codec_s *codec, const char *ftype);
+pl_insert_cue_from_buffer (playItem_t *after, const char *fname, const uint8_t *buffer, int buffersize, struct DB_decoder_s *decoder, const char *ftype);
+
+playItem_t *
+pl_insert_cue (playItem_t *after, const char *cuename, struct DB_decoder_s *decoder, const char *ftype);
 
 int
 pl_set_current (playItem_t *it);

@@ -19,38 +19,47 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <FLAC/stream_decoder.h>
-#include "codec.h"
-#include "cflac.h"
-#include "common.h"
-#include "playlist.h"
+#include "deadbeef.h"
+
+static DB_decoder_t plugin;
+static DB_functions_t *deadbeef;
+
+#define min(x,y) ((x)<(y)?(x):(y))
+#define max(x,y) ((x)>(y)?(x):(y))
 
 static FLAC__StreamDecoder *decoder = 0;
-#define BUFFERSIZE 40000
-static char buffer[BUFFERSIZE];
+#define BUFFERSIZE 100000
+static char buffer[BUFFERSIZE]; // this buffer always has int32 samples
 static int remaining; // bytes remaining in buffer from last read
 static float timestart;
 static float timeend;
 
-FLAC__StreamDecoderWriteStatus
+static FLAC__StreamDecoderWriteStatus
 cflac_write_callback (const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame, const FLAC__int32 * const inputbuffer[], void *client_data) {
     if (frame->header.blocksize == 0) {
         return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
     }
-    int readbytes = frame->header.blocksize * cflac.info.channels * cflac.info.bitsPerSample / 8;
+    int readbytes = frame->header.blocksize * plugin.info.channels * plugin.info.bps / 8;
     int bufsize = BUFFERSIZE-remaining;
-    int bufsamples = bufsize / (cflac.info.channels * cflac.info.bitsPerSample / 8);
+    int bufsamples = bufsize / (plugin.info.channels * plugin.info.bps / 8);
     int nsamples = min (bufsamples, frame->header.blocksize);
     char *bufptr = &buffer[remaining];
+    int32_t mask = (1<<(frame->header.bits_per_sample-1))-1;
+    float scaler = 1.f / ((1<<(frame->header.bits_per_sample-1))-1);
+    int32_t neg = 1<<frame->header.bits_per_sample;
+    int32_t sign = (1<<31);
+    int32_t signshift = frame->header.bits_per_sample-1;
+
     for (int i = 0; i < nsamples; i++) {
-        FLAC__int16 lsample = (FLAC__int16)inputbuffer[0][i];
-        ((int16_t*)bufptr)[0] = lsample;
-        bufptr += cflac.info.bitsPerSample / 8;
-        remaining += cflac.info.bitsPerSample / 8;
-        if (cflac.info.channels > 1) {
-            FLAC__int16 rsample = (FLAC__int16)inputbuffer[1][i];
-            ((int16_t*)bufptr)[0] = rsample;
-            bufptr += cflac.info.bitsPerSample / 8;
-            remaining += cflac.info.bitsPerSample / 8;
+        int32_t sample = inputbuffer[0][i];
+        ((float*)bufptr)[0] = (sample - ((sample&sign)>>signshift)*neg) * scaler;
+        bufptr += sizeof (float);
+        remaining += sizeof (float);
+        if (plugin.info.channels > 1) {
+            int32_t sample = inputbuffer[1][i];
+            ((float*)bufptr)[0] = (sample - ((sample&sign)>>signshift)*neg) * scaler;
+            bufptr += sizeof (float);
+            remaining += sizeof (float);
         }
     }
     if (readbytes > bufsize) {
@@ -60,36 +69,36 @@ cflac_write_callback (const FLAC__StreamDecoder *decoder, const FLAC__Frame *fra
     return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
 
-void
+static void
 cflac_metadata_callback(const FLAC__StreamDecoder *decoder, const FLAC__StreamMetadata *metadata, void *client_data) {
     FLAC__uint64 total_samples = metadata->data.stream_info.total_samples;
     int sample_rate = metadata->data.stream_info.sample_rate;
     int channels = metadata->data.stream_info.channels;
     int bps = metadata->data.stream_info.bits_per_sample;
-    cflac.info.samplesPerSecond = sample_rate;
-    cflac.info.channels = channels;
-    cflac.info.bitsPerSample = bps;
-    cflac.info.readposition = 0;
+    plugin.info.samplerate = sample_rate;
+    plugin.info.channels = channels;
+    plugin.info.bps = bps;
+    plugin.info.readpos = 0;
 }
 
-void
+static void
 cflac_error_callback(const FLAC__StreamDecoder *decoder, FLAC__StreamDecoderErrorStatus status, void *client_data) {
 //    fprintf(stderr, "cflac: got error callback: %s\n", FLAC__StreamDecoderErrorStatusString[status]);
 }
 
 static int cflac_init_stop_decoding;
 
-void
+static void
 cflac_init_error_callback(const FLAC__StreamDecoder *decoder, FLAC__StreamDecoderErrorStatus status, void *client_data) {
 //    fprintf(stderr, "cflac: got error callback: %s\n", FLAC__StreamDecoderErrorStatusString[status]);
     cflac_init_stop_decoding = 1;
 }
 
-void
+static void
 cflac_free (void);
 
-int
-cflac_init (playItem_t *it) {
+static int
+cflac_init (DB_playItem_t *it) {
     FILE *fp = fopen (it->fname, "rb");
     if (!fp) {
         return -1;
@@ -118,26 +127,27 @@ cflac_init (playItem_t *it) {
         cflac_free ();
         return -1;
     }
-    cflac.info.samplesPerSecond = -1;
+    plugin.info.samplerate = -1;
     if (!FLAC__stream_decoder_process_until_end_of_metadata (decoder)) {
         cflac_free ();
         return -1;
     }
-    if (cflac.info.samplesPerSecond == -1) { // not a FLAC stream
+    if (plugin.info.samplerate == -1) { // not a FLAC stream
         cflac_free ();
         return -1;
     }
     timestart = it->timestart;
     timeend = it->timeend;
     if (timeend > timestart || timeend < 0) {
-        cflac.seek (0);
+        plugin.seek (0);
     }
+    plugin.info.readpos = 0;
 
     remaining = 0;
     return 0;
 }
 
-void
+static void
 cflac_free (void) {
     if (decoder) {
         FLAC__stream_decoder_delete(decoder);
@@ -145,28 +155,34 @@ cflac_free (void) {
     }
 }
 
-int
-cflac_read (char *bytes, int size) {
+static int
+cflac_read_int16 (char *bytes, int size) {
     int initsize = size;
-    int nsamples = size / (cflac.info.channels * cflac.info.bitsPerSample / 8);
+    int nsamples = size / (plugin.info.channels * plugin.info.bps / 8);
     if (timeend > timestart) {
-        if (cflac.info.readposition + timestart > timeend) {
+        if (plugin.info.readpos + timestart > timeend) {
             return 0;
         }
     }
     do {
         if (remaining) {
-            int sz = min (remaining, size);
-            memcpy (bytes, buffer, sz);
+            int s = size * 2;
+            int sz = min (remaining, s);
+            // convert from float to int16
+            float *in = (float *)buffer;
+            for (int i = 0; i < sz/4; i++) {
+                *((int16_t *)bytes) = (int16_t)((*in) * 0x7fff);
+                size -= 2;
+                bytes += 2;
+                in++;
+            }
             if (sz < remaining) {
                 memmove (buffer, &buffer[sz], remaining-sz);
             }
             remaining -= sz;
-            bytes += sz;
-            size -= sz;
-            cflac.info.readposition += (float)sz / (cflac.info.channels * cflac.info.samplesPerSecond * cflac.info.bitsPerSample / 8);
+            plugin.info.readpos += (float)sz / (plugin.info.channels * plugin.info.samplerate * sizeof (float));
             if (timeend > timestart) {
-                if (cflac.info.readposition + timestart > timeend) {
+                if (plugin.info.readpos + timestart > timeend) {
                     break;
                 }
             }
@@ -176,26 +192,65 @@ cflac_read (char *bytes, int size) {
         }
         if (!FLAC__stream_decoder_process_single (decoder)) {
             break;
-//            memset (bytes, 0, size);
-//            return -1;
         }
         if (FLAC__stream_decoder_get_state (decoder) == FLAC__STREAM_DECODER_END_OF_STREAM) {
             break;
-//            return -1;
         }
     } while (size > 0);
 
     return initsize - size;
 }
 
-int
+static int
+cflac_read_float32 (char *bytes, int size) {
+    int initsize = size;
+    int nsamples = size / (plugin.info.channels * plugin.info.bps / 8);
+    if (timeend > timestart) {
+        if (plugin.info.readpos + timestart > timeend) {
+            fprintf (stderr, "readpos %f + timestart %f = %f is > timeend %f\n", plugin.info.readpos, timestart, plugin.info.readpos + timestart, timeend);
+            return 0;
+        }
+    }
+    do {
+        if (remaining) {
+            int sz = min (remaining, size);
+            memcpy (bytes, buffer, sz);
+            size -= sz;
+            bytes += sz;
+            if (sz < remaining) {
+                memmove (buffer, &buffer[sz], remaining-sz);
+            }
+            remaining -= sz;
+            plugin.info.readpos += (float)sz / (plugin.info.channels * plugin.info.samplerate * sizeof (int32_t));
+            if (timeend > timestart) {
+                if (plugin.info.readpos + timestart > timeend) {
+                    break;
+                }
+            }
+        }
+        if (!size) {
+            break;
+        }
+        if (!FLAC__stream_decoder_process_single (decoder)) {
+            break;
+        }
+        if (FLAC__stream_decoder_get_state (decoder) == FLAC__STREAM_DECODER_END_OF_STREAM) {
+            break;
+        }
+    } while (size > 0);
+
+    return initsize - size;
+}
+
+static int
 cflac_seek (float time) {
     time += timestart;
-    if (!FLAC__stream_decoder_seek_absolute (decoder, (FLAC__uint64)(time * cflac.info.samplesPerSecond))) {
+    if (!FLAC__stream_decoder_seek_absolute (decoder, (FLAC__uint64)(time * plugin.info.samplerate))) {
         return -1;
     }
     remaining = 0;
-    cflac.info.readposition = time - timestart;
+    plugin.info.readpos = time - timestart;
+    printf ("readpos: %f\n", plugin.info.readpos);
     return 0;
 }
 
@@ -208,15 +263,15 @@ cflac_init_write_callback (const FLAC__StreamDecoder *decoder, const FLAC__Frame
 }
 
 typedef struct {
-    playItem_t *after;
-    playItem_t *last;
+    DB_playItem_t *after;
+    DB_playItem_t *last;
     const char *fname;
     int samplerate;
     int nchannels;
     float duration;
 } cue_cb_data_t;
 
-void
+static void
 cflac_init_cue_metadata_callback(const FLAC__StreamDecoder *decoder, const FLAC__StreamMetadata *metadata, void *client_data) {
     if (cflac_init_stop_decoding) {
         return;
@@ -227,17 +282,19 @@ cflac_init_cue_metadata_callback(const FLAC__StreamDecoder *decoder, const FLAC_
         cb->nchannels = metadata->data.stream_info.channels;
         cb->duration = metadata->data.stream_info.total_samples / (float)metadata->data.stream_info.sample_rate;
     }
+    // {{{ disabled
+#if 0
     else if (metadata->type == FLAC__METADATA_TYPE_CUESHEET) {
         //printf ("loading embedded cuesheet!\n");
         const FLAC__StreamMetadata_CueSheet *cue = &metadata->data.cue_sheet;
-        playItem_t *prev = NULL;
+        DB_playItem_t *prev = NULL;
         for (int i = 0; i < cue->num_tracks; i++) {
             FLAC__StreamMetadata_CueSheet_Track *t = &cue->tracks[i];
             if (t->type == 0 && t->num_indices > 0) {
                 FLAC__StreamMetadata_CueSheet_Index *idx = t->indices;
-                playItem_t *it = malloc (sizeof (playItem_t));
-                memset (it, 0, sizeof (playItem_t));
-                it->codec = &cflac;
+                DB_playItem_t *it = malloc (sizeof (DB_playItem_t));
+                memset (it, 0, sizeof (DB_playItem_t));
+                it->decoder = &plugin;
                 it->fname = strdup (cb->fname);
                 it->tracknum = t->number;
                 it->timestart = (float)t->offset / cb->samplerate;
@@ -248,12 +305,12 @@ cflac_init_cue_metadata_callback(const FLAC__StreamDecoder *decoder, const FLAC_
                 }
                 it->filetype = "FLAC";
                 //printf ("N: %d, t: %f, bps=%d\n", it->tracknum, it->timestart/60.f, cb->samplerate);
-                playItem_t *ins = pl_insert_item (cb->last, it);
+                DB_playItem_t *ins = deadbeef->pl_insert_item (cb->last, it);
                 if (ins) {
                     cb->last = ins;
                 }
                 else {
-                    pl_item_free (it);
+                    deadbeef->pl_item_free (it);
                     it = NULL;
                 }
                 prev = it;
@@ -265,7 +322,7 @@ cflac_init_cue_metadata_callback(const FLAC__StreamDecoder *decoder, const FLAC_
         }
     }
     else if (metadata->type == FLAC__METADATA_TYPE_VORBIS_COMMENT) {
-        playItem_t *it = NULL;
+        DB_playItem_t *it = NULL;
         if (cb->after) {
             it = cb->after->next[PL_MAIN];
         }
@@ -281,14 +338,31 @@ cflac_init_cue_metadata_callback(const FLAC__StreamDecoder *decoder, const FLAC_
             }
         }
     }
+#endif
+// }}}
+    else if (metadata->type == FLAC__METADATA_TYPE_VORBIS_COMMENT) {
+        const FLAC__StreamMetadata_VorbisComment *vc = &metadata->data.vorbis_comment;
+        for (int i = 0; i < vc->num_comments; i++) {
+            const FLAC__StreamMetadata_VorbisComment_Entry *c = &vc->comments[i];
+            if (c->length > 0) {
+                char s[c->length+1];
+                s[c->length] = 0;
+                memcpy (s, c->entry, c->length);
+                if (!strncasecmp (s, "cuesheet=", 9)) {
+                    cb->last = deadbeef->pl_insert_cue_from_buffer (cb->after, cb->fname, s+9, c->length-9, &plugin, "FLAC");
+                }
+            }
+        }
+    }
 }
-void
+
+static void
 cflac_init_metadata_callback(const FLAC__StreamDecoder *decoder, const FLAC__StreamMetadata *metadata, void *client_data) {
     if (cflac_init_stop_decoding) {
         printf ("error flag is set, ignoring init_metadata callback..\n");
         return;
     }
-    playItem_t *it = (playItem_t *)client_data;
+    DB_playItem_t *it = (DB_playItem_t *)client_data;
     //it->tracknum = 0;
     if (metadata->type == FLAC__METADATA_TYPE_STREAMINFO) {
         it->duration = metadata->data.stream_info.total_samples / (float)metadata->data.stream_info.sample_rate;
@@ -303,25 +377,25 @@ cflac_init_metadata_callback(const FLAC__StreamDecoder *decoder, const FLAC__Str
                 s[c->length] = 0;
                 memcpy (s, c->entry, c->length);
                 if (!strncasecmp (s, "ARTIST=", 7)) {
-                    pl_add_meta (it, "artist", s + 7);
+                    deadbeef->pl_add_meta (it, "artist", s + 7);
                 }
                 else if (!strncasecmp (s, "TITLE=", 6)) {
-                    pl_add_meta (it, "title", s + 6);
+                    deadbeef->pl_add_meta (it, "title", s + 6);
                     title_added = 1;
                 }
                 else if (!strncasecmp (s, "ALBUM=", 6)) {
-                    pl_add_meta (it, "album", s + 6);
+                    deadbeef->pl_add_meta (it, "album", s + 6);
                 }
                 else if (!strncasecmp (s, "TRACKNUMBER=", 12)) {
-                    pl_add_meta (it, "track", s + 12);
+                    deadbeef->pl_add_meta (it, "track", s + 12);
                 }
                 else if (!strncasecmp (s, "DATE=", 5)) {
-                    pl_add_meta (it, "date", s + 5);
+                    deadbeef->pl_add_meta (it, "date", s + 5);
                 }
             }
         }
         if (!title_added) {
-            pl_add_meta (it, "title", NULL);
+            deadbeef->pl_add_meta (it, "title", NULL);
         }
 
 //    pl_add_meta (it, "artist", performer);
@@ -333,9 +407,9 @@ cflac_init_metadata_callback(const FLAC__StreamDecoder *decoder, const FLAC__Str
 //    *psr = metadata->data.stream_info.sample_rate;
 }
 
-playItem_t *
-cflac_insert (playItem_t *after, const char *fname) {
-    playItem_t *it = NULL;
+static DB_playItem_t *
+cflac_insert (DB_playItem_t *after, const char *fname) {
+    DB_playItem_t *it = NULL;
     FLAC__StreamDecoder *decoder = NULL;
     FILE *fp = fopen (fname, "rb");
     if (!fp) {
@@ -382,7 +456,7 @@ cflac_insert (playItem_t *after, const char *fname) {
     }
 
     // try external cue
-    playItem_t *cue_after = pl_insert_cue (after, fname, &cflac, "flac");
+    DB_playItem_t *cue_after = deadbeef->pl_insert_cue (after, fname, &plugin, "flac");
     if (cue_after) {
         cue_after->timeend = cb.duration;
         cue_after->duration = cue_after->timeend - cue_after->timestart;
@@ -396,9 +470,8 @@ cflac_insert (playItem_t *after, const char *fname) {
     // try single FLAC file without cue
     FLAC__stream_decoder_set_metadata_respond_all (decoder);
     int samplerate = -1;
-    it = malloc (sizeof (playItem_t));
-    memset (it, 0, sizeof (playItem_t));
-    it->codec = &cflac;
+    it = deadbeef->pl_item_alloc ();
+    it->decoder = &plugin;
     it->fname = strdup (fname);
     it->tracknum = 0;
     it->timestart = 0;
@@ -413,11 +486,11 @@ cflac_insert (playItem_t *after, const char *fname) {
     FLAC__stream_decoder_delete(decoder);
     decoder = NULL;
     it->filetype = "FLAC";
-    after = pl_insert_item (after, it);
+    after = deadbeef->pl_insert_item (after, it);
     return after;
 cflac_insert_fail:
     if (it) {
-        pl_item_free (it);
+        deadbeef->pl_item_free (it);
     }
     if (decoder) {
         FLAC__stream_decoder_delete(decoder);
@@ -428,22 +501,32 @@ cflac_insert_fail:
     return NULL;
 }
 
-static const char * exts[]=
-{
-	"flac",NULL
-};
+static const char *exts[] = { "flac", NULL };
 
-const char **cflac_getexts (void) {
-    return exts;
-}
+static const char *filetypes[] = { "FLAC", NULL };
 
-codec_t cflac = {
+// define plugin interface
+static DB_decoder_t plugin = {
+    .plugin.version_major = 0,
+    .plugin.version_minor = 1,
+    .plugin.type = DB_PLUGIN_DECODER,
+    .plugin.name = "FLAC decoder",
+    .plugin.author = "Alexey Yakovenko",
+    .plugin.email = "waker@users.sourceforge.net",
+    .plugin.website = "http://deadbeef.sf.net",
     .init = cflac_init,
     .free = cflac_free,
-    .read = cflac_read,
+    .read_int16 = cflac_read_int16,
+    .read_float32 = cflac_read_float32,
     .seek = cflac_seek,
     .insert = cflac_insert,
-    .getexts = cflac_getexts,
+    .exts = exts,
     .id = "stdflac",
-    .filetypes = { "FLAC", NULL }
+    .filetypes = filetypes
 };
+
+DB_plugin_t *
+flac_load (DB_functions_t *api) {
+    deadbeef = api;
+    return DB_PLUGIN (&plugin);
+}

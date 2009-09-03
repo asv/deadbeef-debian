@@ -20,49 +20,105 @@
 #include <stdlib.h>
 #include "threading.h"
 
-void thread_start (void (*fn)(uintptr_t ctx), uintptr_t ctx) {
+intptr_t
+thread_start (void (*fn)(uintptr_t ctx), uintptr_t ctx) {
     pthread_t tid;
     pthread_attr_t attr;
     int s = pthread_attr_init (&attr);
     if (s) {
-        printf ("pthread_attr_init failed\n");
-        return;
+        fprintf (stderr, "pthread_attr_init failed\n");
+        return -1;
     }
 
     if (pthread_create (&tid, &attr, (void *(*)(void *))fn, (void*)ctx)) {
-        printf ("pthread_create failed\n");
-        return;
+        fprintf (stderr, "pthread_create failed\n");
+        return -1;
     }
     s = pthread_attr_destroy (&attr);
     if (s) {
-        printf ("pthread_attr_destroy failed\n");
-        return;
+        fprintf (stderr, "pthread_attr_destroy failed\n");
+        pthread_cancel (tid);
+        return -1;
     }
+    return tid;
 }
-uintptr_t mutex_create (void) {
+
+int
+thread_join (intptr_t tid) {
+    void *retval;
+    int s = pthread_join ((pthread_t)tid, &retval);
+    if (s) {
+        fprintf (stderr, "pthread_join failed\n");
+        return -1;
+    }
+    return 0;
+}
+
+uintptr_t
+mutex_create (void) {
     pthread_mutex_t *mtx = malloc (sizeof (pthread_mutex_t));
     if (pthread_mutex_init (mtx, NULL)) {
         printf ("pthread_mutex_init failed!\n");
     }
     return (uintptr_t)mtx;
 }
-void mutex_free (uintptr_t _mtx) {
+
+void
+mutex_free (uintptr_t _mtx) {
     pthread_mutex_t *mtx = (pthread_mutex_t *)_mtx;
     mutex_lock (_mtx);
     mutex_unlock (_mtx);
     pthread_mutex_destroy (mtx);
     free (mtx);
 }
-int mutex_lock (uintptr_t _mtx) {
+
+int
+mutex_lock (uintptr_t _mtx) {
     pthread_mutex_t *mtx = (pthread_mutex_t *)_mtx;
     if (pthread_mutex_lock (mtx)) {
         printf ("pthread_mutex_lock failed\n");
     }
 }
-int mutex_unlock (uintptr_t _mtx) {
+
+int
+mutex_unlock (uintptr_t _mtx) {
     pthread_mutex_t *mtx = (pthread_mutex_t *)_mtx;
     if (pthread_mutex_unlock (mtx)) {
         printf ("pthread_mutex_unlock failed\n");
     };
 }
 
+uintptr_t
+cond_create (void) {
+    pthread_cond_t *cond = malloc (sizeof (pthread_cond_t));
+    pthread_cond_init (cond, NULL);
+    return (uintptr_t)cond;
+}
+
+void
+cond_free (uintptr_t c) {
+    if (c) {
+        pthread_cond_t *cond = (pthread_cond_t *)c;
+        pthread_cond_destroy (cond);
+        free (cond);
+    }
+}
+
+int
+cond_wait (uintptr_t c, uintptr_t m) {
+    pthread_cond_t *cond = (pthread_cond_t *)c;
+    pthread_mutex_t *mutex = (pthread_mutex_t *)m;
+    return pthread_cond_wait (cond, mutex);
+}
+
+int
+cond_signal (uintptr_t c) {
+    pthread_cond_t *cond = (pthread_cond_t *)c;
+    return pthread_cond_signal (cond);
+}
+
+int
+cond_broadcast (uintptr_t c) {
+    pthread_cond_t *cond = (pthread_cond_t *)c;
+    return pthread_cond_broadcast (cond);
+}

@@ -11,22 +11,33 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_STDC_HEADERS
 AC_PROG_INSTALL
-AC_PROG_RANLIB
+dnl AC_PROG_RANLIB
+AC_PROG_LIBTOOL
+LT_INIT
+AC_CONFIG_MACRO_DIR([m4])
 AC_C_BIGENDIAN
 AC_DEFINE([PREFIX], [], [Installation prefix])
-if test "x$prefix" = "xNONE" ; then
-    AC_DEFINE_UNQUOTED(PREFIX, "${ac_default_prefix}")
-else
-    AC_DEFINE_UNQUOTED(PREFIX, "${prefix}")
-fi
+
+test "x$prefix" = xNONE && prefix=$ac_default_prefix
+AC_DEFINE_UNQUOTED(PREFIX, "${prefix}")
 
 CFLAGS="$CFLAGS -D_GNU_SOURCE -O2 -DHAVE_UNIX"
 CPPFLAGS="$CFLAGS"
 
-PKG_CHECK_MODULES(DEPS, gtk+-2.0 gthread-2.0 glib-2.0 vorbis vorbisfile mad samplerate alsa)
+PKG_CHECK_MODULES(DEPS, gtk+-2.0 >= 2.12 gthread-2.0 glib-2.0 vorbis vorbisfile mad samplerate alsa)
+PKG_CHECK_MODULES(LASTFM_DEPS, libcurl)
+
+AX_EXT()
+
 AC_CHECK_LIB([FLAC], [main],,AC_MSG_ERROR([flac not found]))
 AC_SUBST(DEPS_CFLAGS)
 AC_SUBST(DEPS_LIBS)
+
+dnl ape plugin
+AC_CHECK_LIB([mac], [main], [HAVE_LIBMAC=1 ; APE_LIBS="-lmac" ; APE_DIR="plugins/ape"])
+AC_SUBST(HAVE_LIBMAC)
+AC_SUBST(APE_LIBS)
+AC_SUBST(APE_DIR)
 
 AC_OUTPUT([
 Makefile
@@ -35,5 +46,10 @@ gme/Game_Music_Emu-0.5.2/Makefile
 gme/Game_Music_Emu-0.5.2/gme/Makefile
 sid/sidplay-libs-2.1.0/Makefile
 dumb/Makefile
+plugins/hotkeys/Makefile
+plugins/lastfm/Makefile
+plugins/ape/Makefile
+plugins/demac/Makefile
+deadbeef.desktop
 ])
 

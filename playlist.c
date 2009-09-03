@@ -25,23 +25,21 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <assert.h>
+#include <time.h>
 #include "playlist.h"
 #include "codec.h"
 #include "streamer.h"
 #include "messagepump.h"
 #include "messages.h"
 #include "playback.h"
+#include "plugins.h"
 
-#include "cvorbis.h"
-#include "cdumb.h"
-#include "cmp3.h"
-#include "cgme.h"
-#include "cflac.h"
-#include "csid.h"
-
-codec_t *codecs[] = {
-    &cdumb, &cvorbis, &cflac, &cgme, &cmp3, &csid, NULL
-};
+//#include "cvorbis.h"
+//#include "cdumb.h"
+//#include "cmp3.h"
+//#include "cgme.h"
+//#include "cflac.h"
+//#include "csid.h"
 
 #define SKIP_BLANK_CUE_TRACKS 1
 
@@ -60,8 +58,8 @@ pl_free (void) {
     }
 }
 
-static char *
-pl_cue_skipspaces (uint8_t *p) {
+static const char *
+pl_cue_skipspaces (const uint8_t *p) {
     while (*p && *p <= ' ') {
         p++;
     }
@@ -69,7 +67,7 @@ pl_cue_skipspaces (uint8_t *p) {
 }
 
 static void
-pl_get_qvalue_from_cue (char *p, char *out) {
+pl_get_qvalue_from_cue (const char *p, char *out) {
     if (*p == 0) {
         *out = 0;
         return;
@@ -91,7 +89,7 @@ pl_get_qvalue_from_cue (char *p, char *out) {
 }
 
 static void
-pl_get_value_from_cue (char *p, char *out) {
+pl_get_value_from_cue (const char *p, char *out) {
     while (*p >= ' ') {
         *out++ = *p++;
     }
@@ -136,23 +134,7 @@ pl_cue_parse_time (const char *p) {
 }
 
 playItem_t *
-pl_insert_cue (playItem_t *after, const char *fname, codec_t *codec, const char *ftype) {
-    int len = strlen (fname);
-    char cuename[len+5];
-    strcpy (cuename, fname);
-    strcpy (cuename+len, ".cue");
-    FILE *fp = fopen (cuename, "rt");
-    if (!fp) {
-        char *ptr = cuename + len-1;
-        while (ptr >= cuename && *ptr != '.') {
-            ptr--;
-        }
-        strcpy (ptr+1, "cue");
-        fp = fopen (cuename, "rt");
-        if (!fp) {
-            return NULL;
-        }
-    }
+pl_insert_cue_from_buffer (playItem_t *after, const char *fname, const uint8_t *buffer, int buffersize, struct DB_decoder_s *decoder, const char *ftype) {
     char performer[1024];
     char albumtitle[1024];
     char file[1024];
@@ -160,12 +142,27 @@ pl_insert_cue (playItem_t *after, const char *fname, codec_t *codec, const char 
     char title[1024];
     char start[1024];
     playItem_t *prev = NULL;
-    for (;;) {
-        char str[1024];
-        if (!fgets (str, 1024, fp)) {
-            break; // eof
+    while (buffersize > 0) {
+        const uint8_t *p = buffer;
+        // find end of line
+        while (p - buffer < buffersize && *p >= 0x20) {
+            p++;
         }
-        char *p = pl_cue_skipspaces (str);
+        // skip linebreak(s)
+        while (p - buffer < buffersize && *p < 0x20) {
+            *p++;
+        }
+        if (p-buffer > 2048) { // huge string, ignore
+            buffer = p;
+            buffersize -= p-buffer;
+            continue;
+        }
+        char str[p-buffer+1];
+        strncpy (str, buffer, p-buffer);
+        str[p-buffer] = 0;
+        buffersize -= p-buffer;
+        buffer = p;
+        p = pl_cue_skipspaces (str);
         if (!strncmp (p, "PERFORMER ", 10)) {
             pl_get_qvalue_from_cue (p + 10, performer);
 //            printf ("got performer: %s\n", performer);
@@ -181,12 +178,14 @@ pl_insert_cue (playItem_t *after, const char *fname, codec_t *codec, const char 
             }
         }
         else if (!strncmp (p, "FILE ", 5)) {
+        // ignore
+#if 0
             pl_get_qvalue_from_cue (p + 5, file);
             // copy directory name
-            char fname[1024];
-            int len = strlen (cuename);
-            memcpy (fname, cuename, len+1);
-            char *p = fname + len;
+            char dirname[1024];
+            int len = strlen (fname);
+            memcpy (dirname, fname, len+1);
+            char *p = dirname + len;
             while (*p != '/') {
                 p--;
                 len--;
@@ -202,8 +201,9 @@ pl_insert_cue (playItem_t *after, const char *fname, codec_t *codec, const char 
             }
             strcpy (p, file);
             // copy full name in place of relative name
-            strcpy (file, fname);
+            strcpy (file, dirname);
 //            printf ("ended up as: %s\n", file);
+#endif
         }
         else if (!strncmp (p, "TRACK ", 6)) {
             pl_get_value_from_cue (p + 6, track);
@@ -244,11 +244,11 @@ pl_insert_cue (playItem_t *after, const char *fname, codec_t *codec, const char 
 //            printf ("adding %s\n", str);
             playItem_t *it = malloc (sizeof (playItem_t));
             memset (it, 0, sizeof (playItem_t));
-            it->codec = codec;
-            it->fname = strdup (file);
+            it->decoder = decoder;
+            it->fname = strdup (fname);
             it->tracknum = atoi (track);
             it->timestart = tstart;
-            it->timeend = -1; // will be filled by next read, or by codec
+            it->timeend = -1; // will be filled by next read, or by decoder
             it->filetype = ftype;
             after = pl_insert_item (after, it);
             pl_add_meta (it, "artist", performer);
@@ -262,8 +262,41 @@ pl_insert_cue (playItem_t *after, const char *fname, codec_t *codec, const char 
 //            printf ("got unknown line:\n%s\n", p);
         }
     }
-    fclose (fp);
     return after;
+}
+
+playItem_t *
+pl_insert_cue (playItem_t *after, const char *fname, struct DB_decoder_s *decoder, const char *ftype) {
+    int len = strlen (fname);
+    char cuename[len+5];
+    strcpy (cuename, fname);
+    strcpy (cuename+len, ".cue");
+    FILE *fp = fopen (cuename, "rb");
+    if (!fp) {
+        char *ptr = cuename + len-1;
+        while (ptr >= cuename && *ptr != '.') {
+            ptr--;
+        }
+        strcpy (ptr+1, "cue");
+        fp = fopen (cuename, "rb");
+        if (!fp) {
+            return NULL;
+        }
+    }
+    fseek (fp, 0, SEEK_END);
+    size_t sz = ftell (fp);
+    if (sz == 0) {
+        fclose (fp);
+        return NULL;
+    }
+    rewind (fp);
+    uint8_t buf[sz];
+    if (fread (buf, 1, sz, fp) != sz) {
+        fclose (fp);
+        return NULL;
+    }
+    fclose (fp);
+    return pl_insert_cue_from_buffer (after, fname, buf, sz, decoder, ftype);
 }
 
 playItem_t *
@@ -271,23 +304,24 @@ pl_insert_file (playItem_t *after, const char *fname, int *pabort, int (*cb)(pla
     if (!fname) {
         return NULL;
     }
-    // detect codec
-    codec_t *codec = NULL;
+    // detect decoder
+//    DB_decoder_t *decoder = NULL;
     const char *eol = fname + strlen (fname) - 1;
     while (eol > fname && *eol != '.') {
         eol--;
     }
     eol++;
 
-    // match by codec
-    for (int i = 0; codecs[i]; i++) {
-        if (codecs[i]->getexts && codecs[i]->insert) {
-            const char **exts = codecs[i]->getexts ();
+    DB_decoder_t **decoders = plug_get_decoder_list ();
+    // match by decoder
+    for (int i = 0; decoders[i]; i++) {
+        if (decoders[i]->exts && decoders[i]->insert) {
+            const char **exts = decoders[i]->exts;
             if (exts) {
                 for (int e = 0; exts[e]; e++) {
                     if (!strcasecmp (exts[e], eol)) {
                         playItem_t *inserted = NULL;
-                        if ((inserted = codecs[i]->insert (after, fname)) != NULL) {
+                        if ((inserted = (playItem_t *)decoders[i]->insert (DB_PLAYITEM (after), fname)) != NULL) {
                             if (cb) {
                                 if (cb (inserted, user_data) < 0) {
                                     *pabort = 1;
@@ -526,7 +560,7 @@ pl_insert_item (playItem_t *after, playItem_t *it) {
 void
 pl_item_copy (playItem_t *out, playItem_t *it) {
     out->fname = strdup (it->fname);
-    out->codec = it->codec;
+    out->decoder = it->decoder;
     out->tracknum = it->tracknum;
     out->timestart = it->timestart;
     out->timeend = it->timeend;
@@ -535,6 +569,7 @@ pl_item_copy (playItem_t *out, playItem_t *it) {
     out->endoffset = it->endoffset;
     out->shufflerating = it->shufflerating;
     out->filetype = it->filetype;
+    out->started_timestamp = it->started_timestamp;
     out->next[PL_MAIN] = it->next[PL_MAIN];
     out->prev[PL_MAIN] = it->prev[PL_MAIN];
     out->next[PL_SEARCH] = it->next[PL_SEARCH];
@@ -560,7 +595,9 @@ pl_item_copy (playItem_t *out, playItem_t *it) {
 
 playItem_t *
 pl_item_alloc (void) {
-    return malloc (sizeof (playItem_t));
+    playItem_t *it = malloc (sizeof (playItem_t));
+    memset (it, 0, sizeof (playItem_t));
+    return it;
 }
 
 void
@@ -584,41 +621,37 @@ pl_set_current (playItem_t *it) {
     int ret = 0;
     int from = pl_get_idx_of (playlist_current_ptr);
     int to = it ? pl_get_idx_of (it) : -1;
-#if 0
-    // this produces some kind of bug in the beginning of track
-    if (it == playlist_current_ptr) {
-        if (it && it->codec) {
-            codec_lock ();
-            ret = playlist_current_ptr->codec->seek (0);
-            codec_unlock ();
-        }
-        return ret;
+    if (playlist_current.decoder) {
+        plug_trigger_event (DB_EV_SONGFINISHED);
     }
-#endif
     codec_lock ();
-    if (playlist_current_ptr && playlist_current_ptr->codec) {
-        playlist_current_ptr->codec->free ();
+    if (playlist_current.decoder) {
+        playlist_current.decoder->free ();
     }
     pl_item_free (&playlist_current);
     playlist_current_ptr = it;
-    if (it && it->codec) {
+    if (it && it->decoder) {
         // don't do anything on fail, streamer will take care
-        ret = it->codec->init (it);
+        ret = it->decoder->init (DB_PLAYITEM (it));
         if (ret < 0) {
 //            pl_item_free (&playlist_current);
 //            playlist_current_ptr = NULL;
 //            return ret;
-////            it->codec->info.samplesPerSecond = -1;
+////            it->decoder->info.samplesPerSecond = -1;
         }
     }
     if (playlist_current_ptr) {
         streamer_reset (0);
     }
     if (it) {
-        pl_item_copy (&playlist_current, it);
         it->played = 1;
+        it->started_timestamp = time (NULL);
+        pl_item_copy (&playlist_current, it);
     }
     codec_unlock ();
+    if (it) {
+        plug_trigger_event (DB_EV_SONGSTARTED);
+    }
     messagepump_push (M_SONGCHANGED, 0, from, to);
     return ret;
 }
@@ -810,10 +843,10 @@ void
 pl_start_current (void) {
     codec_lock ();
     playItem_t *it = playlist_current_ptr;
-    if (it && it->codec) {
+    if (it && it->decoder) {
         // don't do anything on fail, streamer will take care
-        it->codec->free ();
-        it->codec->init (it);
+        it->decoder->free ();
+        it->decoder->init (DB_PLAYITEM (it));
     }
     codec_unlock ();
 }
@@ -850,7 +883,7 @@ pl_add_meta (playItem_t *it, const char *key, const char *value) {
             value = str;
         }
         else {
-            value = "?";
+            return;
         }
     }
     m = malloc (sizeof (metaInfo_t));
@@ -866,6 +899,12 @@ void
 pl_format_item_display_name (playItem_t *it, char *str, int len) {
     const char *artist = pl_find_meta (it, "artist");
     const char *title = pl_find_meta (it, "title");
+    if (!artist) {
+        artist = "Unknown artist";
+    }
+    if (!title) {
+        title = "Unknown title";
+    }
     snprintf (str, len, "%s - %s", artist, title);
 #if 0
     // artist - title
@@ -922,7 +961,7 @@ pl_find_meta (playItem_t *it, const char *key) {
         }
         m = m->next;
     }
-    return "?";
+    return NULL;
 }
 
 void
@@ -989,11 +1028,11 @@ pl_save (const char *fname) {
         if (fwrite (it->fname, 1, l, fp) != l) {
             goto save_fail;
         }
-        ll = strlen (it->codec->id);
+        ll = strlen (it->decoder->id);
         if (fwrite (&ll, 1, 1, fp) != 1) {
             goto save_fail;
         }
-        if (fwrite (it->codec->id, 1, ll, fp) != ll) {
+        if (fwrite (it->decoder->id, 1, ll, fp) != ll) {
             goto save_fail;
         }
         l = it->tracknum;
@@ -1058,6 +1097,7 @@ save_fail:
 int
 pl_load (const char *fname) {
     pl_free ();
+    DB_decoder_t **decoders = plug_get_decoder_list ();
     uint8_t majorver = 1;
     uint8_t minorver = 0;
     FILE *fp = fopen (fname, "rb");
@@ -1104,7 +1144,7 @@ pl_load (const char *fname) {
             goto load_fail;
         }
         it->fname[l] = 0;
-        // codec
+        // decoder
         uint8_t ll;
         if (fread (&ll, 1, 1, fp) != 1) {
             goto load_fail;
@@ -1112,17 +1152,17 @@ pl_load (const char *fname) {
         if (ll >= 20) {
             goto load_fail;
         }
-        char codec[20];
-        if (fread (codec, 1, ll, fp) != ll) {
+        char decoder[20];
+        if (fread (decoder, 1, ll, fp) != ll) {
             goto load_fail;
         }
-        codec[ll] = 0;
-        for (int c = 0; codecs[c]; c++) {
-            if (!strcmp (codec, codecs[c]->id)) {
-                it->codec = codecs[c];
+        decoder[ll] = 0;
+        for (int c = 0; decoders[c]; c++) {
+            if (!strcmp (decoder, decoders[c]->id)) {
+                it->decoder = decoders[c];
             }
         }
-        if (!it->codec) {
+        if (!it->decoder) {
             goto load_fail;
         }
         // tracknum
@@ -1142,7 +1182,7 @@ pl_load (const char *fname) {
         if (fread (&it->duration, 1, 4, fp) != 4) {
             goto load_fail;
         }
-        // get const filetype string from codec
+        // get const filetype string from decoder
         uint8_t ft;
         if (fread (&ft, 1, 1, fp) != 1) {
             goto load_fail;
@@ -1153,10 +1193,10 @@ pl_load (const char *fname) {
                 goto load_fail;
             }
             ftype[ft] = 0;
-            if (it->codec && it->codec->filetypes) {
-                for (int i = 0; it->codec->filetypes[i]; i++) {
-                    if (!strcasecmp (it->codec->filetypes[i], ftype)) {
-                        it->filetype = it->codec->filetypes[i];
+            if (it->decoder && it->decoder->filetypes) {
+                for (int i = 0; it->decoder->filetypes[i]; i++) {
+                    if (!strcasecmp (it->decoder->filetypes[i], ftype)) {
+                        it->filetype = it->decoder->filetypes[i];
                         break;
                     }
                 }
