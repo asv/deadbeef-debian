@@ -38,6 +38,7 @@
 #include "playback.h"
 #include "common.h"
 #include "conf.h"
+#include "junklib.h"
 
 // deadbeef api
 DB_functions_t deadbeef_api = {
@@ -80,13 +81,18 @@ DB_functions_t deadbeef_api = {
     .pl_add_meta = (void (*) (DB_playItem_t *, const char *, const char *))pl_add_meta,
     .pl_find_meta = (const char *(*) (DB_playItem_t *, const char *))pl_find_meta,
     // cuesheet support
-    .pl_insert_cue_from_buffer = (DB_playItem_t *(*) (DB_playItem_t *after, const char *fname, const uint8_t *buffer, int buffersize, struct DB_decoder_s *decoder, const char *ftype))pl_insert_cue_from_buffer,
-    .pl_insert_cue = (DB_playItem_t *(*)(DB_playItem_t *, const char *, struct DB_decoder_s *, const char *))pl_insert_cue,
+    .pl_insert_cue_from_buffer = (DB_playItem_t *(*) (DB_playItem_t *after, const char *fname, const uint8_t *buffer, int buffersize, struct DB_decoder_s *decoder, const char *ftype, float duration))pl_insert_cue_from_buffer,
+    .pl_insert_cue = (DB_playItem_t *(*)(DB_playItem_t *, const char *, struct DB_decoder_s *, const char *ftype, float duration))pl_insert_cue,
     // volume control
     .volume_set_db = plug_volume_set_db,
     .volume_get_db = volume_get_db,
     .volume_set_amp = plug_volume_set_amp,
     .volume_get_amp = volume_get_amp,
+    // junk reading
+    .junk_read_id3v1 = (int (*)(DB_playItem_t *it, FILE *fp))junk_read_id3v1,
+    .junk_read_id3v2 = (int (*)(DB_playItem_t *it, FILE *fp))junk_read_id3v2,
+    .junk_read_ape = (int (*)(DB_playItem_t *it, FILE *fp))junk_read_ape,
+    .junk_get_leading_size = junk_get_leading_size,
 };
 
 const char *
@@ -293,6 +299,8 @@ plug_load_all (void) {
                 if (strcasecmp (&namelist[i]->d_name[l-3], ".so")) {
                     continue;
                 }
+                char d_name[256];
+                memcpy (d_name, namelist[i]->d_name, l+1);
                 // no blacklisted
                 const uint8_t *p = conf_blacklist_plugins;
                 while (*p) {
@@ -301,7 +309,7 @@ plug_load_all (void) {
                         e++;
                     }
                     if (l-3 == e-p) {
-                        if (!strncmp (p, namelist[i]->d_name, e-p)) {
+                        if (!strncmp (p, d_name, e-p)) {
                             p = NULL;
                             break;
                         }
@@ -312,31 +320,31 @@ plug_load_all (void) {
                     }
                 }
                 if (!p) {
-                    fprintf (stderr, "plugin %s is blacklisted in config file\n", namelist[i]->d_name);
+                    fprintf (stderr, "plugin %s is blacklisted in config file\n", d_name);
                     continue;
                 }
                 char fullname[1024];
                 strcpy (fullname, dirname);
                 strncat (fullname, "/", 1024);
-                strncat (fullname, namelist[i]->d_name, 1024);
-                printf ("loading plugin %s\n", namelist[i]->d_name);
+                strncat (fullname, d_name, 1024);
+                printf ("loading plugin %s\n", d_name);
                 void *handle = dlopen (fullname, RTLD_NOW);
                 if (!handle) {
                     fprintf (stderr, "dlopen error: %s\n", dlerror ());
                     continue;
                 }
-                namelist[i]->d_name[l-3] = 0;
-                printf ("module name is %s\n", namelist[i]->d_name);
-                strcat (namelist[i]->d_name, "_load");
-                DB_plugin_t *(*plug_load)(DB_functions_t *api) = dlsym (handle, namelist[i]->d_name);
+                d_name[l-3] = 0;
+                printf ("module name is %s\n", d_name);
+                strcat (d_name, "_load");
+                DB_plugin_t *(*plug_load)(DB_functions_t *api) = dlsym (handle, d_name);
                 if (!plug_load) {
                     fprintf (stderr, "dlsym error: %s\n", dlerror ());
                     dlclose (handle);
                     continue;
                 }
                 if (plug_init_plugin (plug_load, handle) < 0) {
-                    namelist[i]->d_name[l-3] = 0;
-                    fprintf (stderr, "plugin %s is incompatible with current version of deadbeef, please upgrade the plugin\n", namelist[i]->d_name);
+                    d_name[l-3] = 0;
+                    fprintf (stderr, "plugin %s is incompatible with current version of deadbeef, please upgrade the plugin\n", d_name);
                     dlclose (handle);
                     continue;
                 }

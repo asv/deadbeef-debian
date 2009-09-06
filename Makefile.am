@@ -8,8 +8,11 @@ SUBDIRS = gme/Game_Music_Emu-0.5.2\
 		  pixmaps\
 		  plugins/hotkeys\
 		  plugins/lastfm\
+		  plugins/demac\
 		  ${APE_DIR}\
-		  plugins/demac
+          ${MPGMAD_DIR}\
+          ${VORBIS_DIR}\
+          ${FLAC_DIR}
 
 dumbpath=@top_srcdir@/dumb
 sidpath=@top_srcdir@/sid/sidplay-libs-2.1.0
@@ -28,13 +31,14 @@ deadbeef_SOURCES =\
 	messagepump.c messagepump.h messages.h\
 	conf.c  conf.h\
 	search.c search.h\
-	cmp3.c cvorbis.c cflac.c cgme.c cdumb.c csid.cpp\
+	cgme.c cdumb.c csid.cpp\
 	palsa.c palsa.h playback.h\
 	threading_pthread.c threading.h\
 	md5/md5.c md5/md5.h md5/md5_loc.h\
 	volume.c volume.h\
 	drawing.h gdkdrawing.c\
-	session.h session.c gtksession.c
+	session.h session.c gtksession.c\
+	junklib.h junklib.c
 
 sdkdir = $(pkgincludedir)
 sdk_HEADERS = deadbeef.h

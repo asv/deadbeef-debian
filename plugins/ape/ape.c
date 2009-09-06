@@ -44,6 +44,14 @@ static int ape_blocks_left;
 static int ape_total_blocks;
 static float timestart;
 static float timeend;
+static int samplesdecoded;
+
+// precalc for bps conversion
+static int32_t mask;
+static float scaler;
+static int32_t neg;
+static int32_t sign;
+static int32_t signshift;
 
 static int
 ape_seek (float seconds);
@@ -62,6 +70,7 @@ ape_init (DB_playItem_t *it) {
     ape_decompress_get_info_data_sized (ape_dec, APE_INFO_WAV_HEADER_DATA, buf, size);
     ape_blk_size = ape_decompress_get_info_int (ape_dec, APE_INFO_BLOCK_ALIGN);
     ape_total_blocks = ape_blocks_left = ape_decompress_get_info_int (ape_dec, APE_DECOMPRESS_TOTAL_BLOCKS);
+    samplesdecoded = 0;
     plugin.info.bps = wfe.wBitsPerSample;
     plugin.info.samplerate = wfe.nSamplesPerSec;
     plugin.info.channels = wfe.nChannels;
@@ -76,6 +85,12 @@ ape_init (DB_playItem_t *it) {
         timeend = it->duration;
     }
 
+    mask = (1<<(plugin.info.bps-1))-1;
+    scaler = 1.f / ((1<<(plugin.info.bps-1))-1);
+    neg = 1<<plugin.info.bps;
+    sign = (1<<31);
+    signshift = plugin.info.bps-1;
+
     return 0;
 }
 
@@ -88,32 +103,81 @@ ape_free (void) {
 }
 
 static int
-ape_read (char *buffer, int size) {
-    int t1 = clock ();
+ape_read_int16 (char *buffer, int size) {
     int initsize = size;
     int nblocks = size / plugin.info.channels / 2;
     nblocks = min (nblocks, ape_blocks_left);
-    nblocks = ape_decompress_getdata (ape_dec, buffer, nblocks);
+    nblocks = ape_decompress_getdata (ape_dec, ape_readbuf, nblocks);
+
+    uint8_t *in = ape_readbuf;
+    for (int i = 0; i < nblocks*plugin.info.channels; i++) {
+        // convert from bps to int32_t
+        int32_t sample = 0;
+        int shift = 0;
+        while (shift < plugin.info.bps - 8) {
+            sample |= (*in << shift);
+            in++;
+            shift += 8;
+        }
+        sample |= ((char)(*in)) << (plugin.info.bps - 8);
+        in++;
+
+        // now that's convertable to 16 bit
+        *((int16_t*)buffer) = (int16_t)sample;
+        buffer += 2;
+    }
+
     ape_blocks_left -= nblocks;
-    int t2 = clock ();
-    float t = (t2-t1) / (float)CLOCKS_PER_SEC;
-    if (t > 1) {
-        fprintf (stderr, "ape_decompress_get_data(%d bytes) took %f sec\n", size, t);
+    samplesdecoded += nblocks;
+    plugin.info.readpos = samplesdecoded / (float)plugin.info.samplerate - timestart;
+    if (plugin.info.readpos >= timeend) {
+        return 0;
     }
     return nblocks * 2 * plugin.info.channels;
 }
 
 static int
+ape_read_float32 (char *buffer, int size) {
+    int initsize = size;
+    int nblocks = size / plugin.info.channels / sizeof (float);
+    nblocks = min (nblocks, ape_blocks_left);
+    nblocks = ape_decompress_getdata (ape_dec, ape_readbuf, nblocks);
+
+    uint8_t *in = ape_readbuf;
+    for (int i = 0; i < nblocks*plugin.info.channels; i++) {
+        // convert from bps to int32_t
+        int32_t sample = 0;
+        int shift = 0;
+        while (shift < plugin.info.bps - 8) {
+            sample |= (*in << shift);
+            in++;
+            shift += 8;
+        }
+        sample |= ((char)(*in)) << (plugin.info.bps - 8);
+        in++;
+
+        // now that's convertable to float32
+        *((float*)buffer) = (sample - ((sample&sign)>>signshift)*neg) * scaler;
+        buffer += sizeof (float);
+    }
+
+    ape_blocks_left -= nblocks;
+    samplesdecoded += nblocks;
+    plugin.info.readpos = samplesdecoded / (float)plugin.info.samplerate - timestart;
+    if (plugin.info.readpos >= timeend) {
+        return 0;
+    }
+    return nblocks * sizeof (float) * plugin.info.channels;
+}
+
+static int
 ape_seek (float seconds) {
     seconds += timestart;
-    fprintf (stderr, "seek to %f seconds\n", seconds);
-    float t1 = clock ();
     int nblock = seconds * plugin.info.samplerate;
     ape_decompress_seek (ape_dec, nblock);
+    samplesdecoded = nblock;
     ape_blocks_left = ape_total_blocks - nblock;
-    plugin.info.readpos = seconds - timestart;
-    float t2 = clock ();
-    fprintf (stderr, "seek took %f sec\n", (t2-t1)/(float)CLOCKS_PER_SEC);
+    plugin.info.readpos = samplesdecoded / (float)plugin.info.samplerate - timestart;
 }
 
 static DB_playItem_t *
@@ -125,14 +189,12 @@ ape_insert (DB_playItem_t *after, const char *fname) {
     }
     WAVEFORMATEX wfe;
     ape_decompress_get_info_data (dec, APE_INFO_WAVEFORMATEX, &wfe);
-    fprintf (stderr, "%s\nWAVEFORMATEX:\nwFormatTag=%04x\nnChannels=%d\nnSamplesPerSec=%d\nnAvgBytesPerSec=%d\nnBlockAlign=%d\nwBitsPerSample=%d\ncbSize=%d\n", fname, wfe.wFormatTag, wfe.nChannels, wfe.nSamplesPerSec, wfe.nAvgBytesPerSec, wfe.nBlockAlign, wfe.wBitsPerSample, wfe.cbSize);
 
     float duration = ape_decompress_get_info_int (dec, APE_DECOMPRESS_TOTAL_BLOCKS) / (float)wfe.nSamplesPerSec;
-    DB_playItem_t *it = deadbeef->pl_insert_cue (after, fname, &plugin, "APE");
+    ape_decompress_destroy (dec);
+    DB_playItem_t *it;
+    it = deadbeef->pl_insert_cue (after, fname, &plugin, "APE", duration);
     if (it) {
-        ape_decompress_destroy (dec);
-        it->timeend = duration;
-        it->duration = it->timeend - it->timestart;
         return it;
     }
 
@@ -141,12 +203,28 @@ ape_insert (DB_playItem_t *after, const char *fname) {
     it->fname = strdup (fname);
     it->filetype = "APE";
     it->duration = duration;
- 
+
+    // try to read tags
+    FILE *fp = fopen (fname, "rb");
+    if (!fp) {
+        deadbeef->pl_item_free (it);
+        return NULL;
+    }
+
+    int v2err = deadbeef->junk_read_id3v2 (it, fp);
+    int v1err = deadbeef->junk_read_id3v1 (it, fp);
+    if (v1err >= 0) {
+        fseek (fp, -128, SEEK_END);
+    }
+    else {
+        fseek (fp, 0, SEEK_END);
+    }
+    int apeerr = deadbeef->junk_read_ape (it, fp);
     deadbeef->pl_add_meta (it, "title", NULL);
+    fclose (fp);
+ 
     after = deadbeef->pl_insert_item (after, it);
 
-    // print info about ape
-    ape_decompress_destroy (dec);
     return after;
 }
 
@@ -164,7 +242,8 @@ static DB_decoder_t plugin = {
     .plugin.website = "http://deadbeef.sf.net",
     .init = ape_init,
     .free = ape_free,
-    .read_int16 = ape_read,
+    .read_int16 = ape_read_int16,
+    .read_float32 = ape_read_float32,
     .seek = ape_seek,
     .insert = ape_insert,
     .exts = exts,

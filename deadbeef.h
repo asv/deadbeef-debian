@@ -29,6 +29,7 @@
 
 #include <stdint.h>
 #include <time.h>
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -146,13 +147,18 @@ typedef struct {
     void (*pl_add_meta) (DB_playItem_t *it, const char *key, const char *value);
     const char *(*pl_find_meta) (DB_playItem_t *song, const char *meta);
     // cuesheet support
-    DB_playItem_t *(*pl_insert_cue_from_buffer) (DB_playItem_t *after, const char *fname, const uint8_t *buffer, int buffersize, struct DB_decoder_s *decoder, const char *ftype);
-    DB_playItem_t * (*pl_insert_cue) (DB_playItem_t *after, const char *filename, struct DB_decoder_s *decoder, const char *ftype);
+    DB_playItem_t *(*pl_insert_cue_from_buffer) (DB_playItem_t *after, const char *fname, const uint8_t *buffer, int buffersize, struct DB_decoder_s *decoder, const char *ftype, float duration);
+    DB_playItem_t * (*pl_insert_cue) (DB_playItem_t *after, const char *filename, struct DB_decoder_s *decoder, const char *ftype, float duration);
     // volume control
     void (*volume_set_db) (float dB);
     float (*volume_get_db) (void);
     void (*volume_set_amp) (float amp);
     float (*volume_get_amp) (void);
+    // junk reading
+    int (*junk_read_id3v1) (DB_playItem_t *it, FILE *fp);
+    int (*junk_read_id3v2) (DB_playItem_t *it, FILE *fp);
+    int (*junk_read_ape) (DB_playItem_t *it, FILE *fp);
+    int (*junk_get_leading_size) (FILE *fp);
 } DB_functions_t;
 
 // base plugin interface

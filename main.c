@@ -216,12 +216,18 @@ exec_command_line (const char *cmdline, int len, int filter) {
             pl_free ();
         }
         while (parg < pend) {
-            if (pl_add_file (parg, NULL, NULL) >= 0) {
-                if (queue) {
-                    exitcode = 3;
-                }
-                else {
-                    exitcode = 2;
+            char resolved[PATH_MAX];
+            if (!realpath (parg, resolved)) {
+                fprintf (stderr, "error: cannot expand filename %s, file will not play\n", parg);
+            }
+            else {
+                if (pl_add_file (resolved, NULL, NULL) >= 0) {
+                    if (queue) {
+                        exitcode = 3;
+                    }
+                    else {
+                        exitcode = 2;
+                    }
                 }
             }
             parg += strlen (parg);
@@ -466,6 +472,7 @@ on_trayicon_activate (GtkWidget       *widget,
     }
     else {
         gtk_widget_show (mainwin);
+        gtk_window_present (GTK_WINDOW (mainwin));
     }
     return FALSE;
 }
@@ -482,6 +489,7 @@ on_trayicon_button_press_event (GtkWidget       *widget,
         }
         else {
             gtk_widget_show (mainwin);
+            gtk_window_present (GTK_WINDOW (mainwin));
         }
     }
     return FALSE;
@@ -649,9 +657,11 @@ main (int argc, char *argv[]) {
     const char *w;
     w = orderwidgets[session_get_playlist_order ()];
     gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (lookup_widget (mainwin, w)), TRUE);
+    pl_set_order (session_get_playlist_order ());
     w = loopingwidgets[session_get_playlist_looping ()];
     gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (lookup_widget (mainwin, w)), TRUE);
     gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (lookup_widget (mainwin, "scroll_follows_playback")), session_get_scroll_follows_playback () ? TRUE : FALSE);
+    pl_set_loop_mode (session_get_playlist_looping ());
 
     searchwin = create_searchwin ();
     gtk_window_set_transient_for (GTK_WINDOW (searchwin), GTK_WINDOW (mainwin));
