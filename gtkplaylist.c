@@ -361,6 +361,9 @@ gtkpl_draw_pl_row (gtkplaylist_t *ps, int row, playItem_t *it) {
 void
 gtkpl_draw_playlist (gtkplaylist_t *ps, int x, int y, int w, int h) {
     GtkWidget *widget = ps->playlist;
+    if (!ps->backbuf) {
+        return;
+    }
     if (!ps->fmtcache && ps->nvisiblerows > 0 && pl_ncolumns > 0) {
         ps->fmtcache = malloc (ps->nvisiblerows * pl_ncolumns * 3 * sizeof (int16_t));
         memset (ps->fmtcache, 0, ps->nvisiblerows * pl_ncolumns * 3 * sizeof (int16_t));
@@ -427,7 +430,9 @@ on_playlist_configure_event            (GtkWidget       *widget,
 void
 gtkpl_expose (gtkplaylist_t *ps, int x, int y, int w, int h) {
     GtkWidget *widget = ps->playlist;
-	gdk_draw_drawable (widget->window, widget->style->black_gc, ps->backbuf, x, y, x, y, w, h);
+    if (widget->window) {
+        gdk_draw_drawable (widget->window, widget->style->black_gc, ps->backbuf, x, y, x, y, w, h);
+    }
 }
 
 void
@@ -783,29 +788,34 @@ gtkpl_keypress (gtkplaylist_t *ps, int keyval, int state) {
     GtkWidget *range = ps->scrollbar;
     int prev = ps->row;
     int newscroll = ps->scrollpos;
-    if ((keyval == GDK_F || keyval == GDK_f) && (state & GDK_CONTROL_MASK)) {
-        search_start ();       
-    }
-    else if ((keyval == GDK_A || keyval == GDK_a) && (state & GDK_CONTROL_MASK)) {
-        // select all
-        pl_select_all ();
-        gtkpl_draw_playlist (ps, 0, 0, widget->allocation.width, widget->allocation.height);
-        gdk_draw_drawable (widget->window, widget->style->black_gc, ps->backbuf, 0, 0, 0, 0, widget->allocation.width, widget->allocation.height);
-        return;
-    }
-    else if ((keyval == GDK_P || keyval == GDK_p) && (state & GDK_CONTROL_MASK)) {
-        messagepump_push (M_PAUSESONG, 0, 0, 0);
-    }
-    else if (keyval == GDK_Return && ps->row != -1) {
-        messagepump_push (M_PLAYSONGNUM, 0, ps->row, 0);
-        return;
-    }
-    else if (keyval == GDK_Delete) {
-        pl_delete_selected ();
-        playlist_refresh ();
-        return;
-    }
-    else if (keyval == GDK_Down && ps->row < (*ps->pcount) - 1) {
+// C-f is now handled by gtk
+//    if ((keyval == GDK_F || keyval == GDK_f) && (state & GDK_CONTROL_MASK)) {
+//        search_start ();       
+//    }
+//    else
+//    if ((keyval == GDK_A || keyval == GDK_a) && (state & GDK_CONTROL_MASK)) {
+//        // select all
+//        pl_select_all ();
+//        gtkpl_draw_playlist (ps, 0, 0, widget->allocation.width, widget->allocation.height);
+//        gdk_draw_drawable (widget->window, widget->style->black_gc, ps->backbuf, 0, 0, 0, 0, widget->allocation.width, widget->allocation.height);
+//        return;
+//    }
+//    else if ((keyval == GDK_P || keyval == GDK_p) && (state & GDK_CONTROL_MASK)) {
+//        messagepump_push (M_PAUSESONG, 0, 0, 0);
+//    }
+//    else
+//    if (keyval == GDK_Return && ps->row != -1) {
+//        messagepump_push (M_PLAYSONGNUM, 0, ps->row, 0);
+//        return;
+//    }
+//    else
+//    if (keyval == GDK_Delete) {
+//        pl_delete_selected ();
+//        playlist_refresh ();
+//        return;
+//    }
+//    else
+    if (keyval == GDK_Down && ps->row < (*ps->pcount) - 1) {
         ps->row++;
         if (ps->row > ps->scrollpos + widget->allocation.height / rowheight - 1) {
             newscroll = ps->row - widget->allocation.height / rowheight + 1;
@@ -1362,6 +1372,25 @@ gtkpl_add_dir (gtkplaylist_t *ps, char *folder) {
     GDK_THREADS_LEAVE();
     pl_add_dir (folder, gtkpl_add_file_info_cb, NULL);
     g_free (folder);
+    GDK_THREADS_ENTER();
+    progress_hide ();
+    playlist_refresh ();
+    GDK_THREADS_LEAVE();
+}
+
+static void
+gtkpl_adddir_cb (gpointer data, gpointer userdata) {
+    pl_add_dir (data, gtkpl_add_file_info_cb, userdata);
+    g_free (data);
+}
+
+void
+gtkpl_add_dirs (gtkplaylist_t *ps, GSList *lst) {
+    GDK_THREADS_ENTER();
+    progress_show ();
+    GDK_THREADS_LEAVE();
+    g_slist_foreach(lst, gtkpl_adddir_cb, NULL);
+    g_slist_free (lst);
     GDK_THREADS_ENTER();
     progress_hide ();
     playlist_refresh ();

@@ -44,6 +44,7 @@
 #include "progress.h"
 #include "volume.h"
 #include "session.h"
+#include "conf.h"
 
 #include "plugins.h"
 
@@ -74,8 +75,9 @@ main_playlist_init (GtkWidget *widget) {
     main_playlist.clicktime = -1;
     main_playlist.nvisiblerows = 0;
     main_playlist.fmtcache = NULL;
-    int colwidths[pl_ncolumns] = { 50, 150, 50, 150, 50 };
-    memcpy (main_playlist.colwidths, colwidths, sizeof (colwidths));
+//    int colwidths[pl_ncolumns] = { 50, 150, 50, 150, 50 };
+//    memcpy (main_playlist.colwidths, colwidths, sizeof (colwidths));
+    main_playlist.colwidths = session_get_main_colwidths_ptr ();
     gtk_object_set_data (GTK_OBJECT (main_playlist.playlist), "ps", &main_playlist);
     gtk_object_set_data (GTK_OBJECT (main_playlist.header), "ps", &main_playlist);
     gtk_object_set_data (GTK_OBJECT (main_playlist.scrollbar), "ps", &main_playlist);
@@ -100,8 +102,9 @@ search_playlist_init (GtkWidget *widget) {
     search_playlist.clicktime = -1;
     search_playlist.nvisiblerows = 0;
     search_playlist.fmtcache = NULL;
-    int colwidths[pl_ncolumns] = { 0, 150, 50, 150, 50 };
-    memcpy (search_playlist.colwidths, colwidths, sizeof (colwidths));
+//    int colwidths[pl_ncolumns] = { 0, 150, 50, 150, 50 };
+//    memcpy (search_playlist.colwidths, colwidths, sizeof (colwidths));
+    search_playlist.colwidths = session_get_search_colwidths_ptr ();
     gtk_object_set_data (GTK_OBJECT (search_playlist.playlist), "ps", &search_playlist);
     gtk_object_set_data (GTK_OBJECT (search_playlist.header), "ps", &search_playlist);
     gtk_object_set_data (GTK_OBJECT (search_playlist.scrollbar), "ps", &search_playlist);
@@ -287,11 +290,10 @@ on_add_files_activate                  (GtkMenuItem     *menuitem,
 }
 
 void
-on_add_folder1_activate                (GtkMenuItem     *menuitem,
+on_add_folders_activate                (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-
-    GtkWidget *dlg = gtk_file_chooser_dialog_new ("Add folder to playlist...", GTK_WINDOW (mainwin), GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, GTK_STOCK_OPEN, GTK_RESPONSE_OK, NULL);
+    GtkWidget *dlg = gtk_file_chooser_dialog_new ("Add folder(s) to playlist...", GTK_WINDOW (mainwin), GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, GTK_STOCK_OPEN, GTK_RESPONSE_OK, NULL);
 
     GtkFileFilter* flt;
     flt = gtk_file_filter_new ();
@@ -322,6 +324,7 @@ on_add_folder1_activate                (GtkMenuItem     *menuitem,
     gtk_file_filter_set_name (flt, "Other files (*)");
     gtk_file_filter_add_pattern (flt, "*");
     gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dlg), flt);
+    gtk_file_chooser_set_select_multiple (GTK_FILE_CHOOSER (dlg), TRUE);
     // restore folder
     gtk_file_chooser_set_current_folder_uri (GTK_FILE_CHOOSER (dlg), session_get_directory ());
     int response = gtk_dialog_run (GTK_DIALOG (dlg));
@@ -334,9 +337,10 @@ on_add_folder1_activate                (GtkMenuItem     *menuitem,
     if (response == GTK_RESPONSE_OK)
     {
         gchar *folder = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dlg));
+        GSList *lst = gtk_file_chooser_get_filenames (GTK_FILE_CHOOSER (dlg));
         gtk_widget_destroy (dlg);
-        if (folder) {
-            messagepump_push (M_ADDDIR, (uintptr_t)folder, 0, 0);
+        if (lst) {
+            messagepump_push (M_ADDDIRS, (uintptr_t)lst, 0, 0);
         }
     }
     else {
@@ -354,7 +358,7 @@ on_preferences1_activate               (GtkMenuItem     *menuitem,
 
 
 void
-on_quit1_activate                      (GtkMenuItem     *menuitem,
+on_quit_activate                      (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
     progress_abort ();
@@ -1145,9 +1149,12 @@ on_mainwin_delete_event                (GtkWidget       *widget,
                                         GdkEvent        *event,
                                         gpointer         user_data)
 {
-//    messagepump_push (M_TERMINATE, 0, 0, 0);
-
-    gtk_widget_hide (widget);
+    if (conf_close_send_to_tray) {
+        gtk_widget_hide (widget);
+    }
+    else {
+        messagepump_push (M_TERMINATE, 0, 0, 0);
+    }
     return TRUE;
 }
 
@@ -1197,4 +1204,15 @@ on_scroll_follows_playback_activate    (GtkMenuItem     *menuitem,
 {
     session_set_scroll_follows_playback (gtk_check_menu_item_get_active (GTK_CHECK_MENU_ITEM (menuitem)));
 }
+
+
+void
+on_find_activate                       (GtkMenuItem     *menuitem,
+                                        gpointer         user_data)
+{
+    search_start ();       
+}
+
+
+
 

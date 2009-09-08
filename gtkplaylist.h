@@ -80,7 +80,7 @@ typedef struct {
     int16_t *fmtcache; // cached text formatting
     int header_fitted[pl_ncolumns];
     char colnames_fitted[pl_ncolumns][pl_colname_max]; // cached formatted names of columns
-    int colwidths[pl_ncolumns]; // current column widths
+    int *colwidths;//[pl_ncolumns]; // current column widths
 } gtkplaylist_t;
 
 #define GTKPL_PROLOGUE \
@@ -152,6 +152,9 @@ gtkpl_header_draw (gtkplaylist_t *ps);
 
 void
 gtkpl_add_dir (gtkplaylist_t *ps, char *folder);
+
+void
+gtkpl_add_dirs (gtkplaylist_t *ps, GSList *lst);
 
 void
 gtkpl_add_files (gtkplaylist_t *ps, GSList *lst);

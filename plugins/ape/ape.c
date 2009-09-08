@@ -90,7 +90,6 @@ ape_init (DB_playItem_t *it) {
     neg = 1<<plugin.info.bps;
     sign = (1<<31);
     signshift = plugin.info.bps-1;
-
     return 0;
 }
 
@@ -178,13 +177,13 @@ ape_seek (float seconds) {
     samplesdecoded = nblock;
     ape_blocks_left = ape_total_blocks - nblock;
     plugin.info.readpos = samplesdecoded / (float)plugin.info.samplerate - timestart;
+    return 0;
 }
 
 static DB_playItem_t *
 ape_insert (DB_playItem_t *after, const char *fname) {
     void *dec = ape_decompress_create (fname);
     if (!dec) {
-        ape_decompress_destroy (dec);
         return NULL;
     }
     WAVEFORMATEX wfe;
@@ -233,6 +232,7 @@ static const char *filetypes[] = { "APE", NULL };
 
 // define plugin interface
 static DB_decoder_t plugin = {
+    DB_PLUGIN_SET_API_VERSION
     .plugin.version_major = 0,
     .plugin.version_minor = 1,
     .plugin.type = DB_PLUGIN_DECODER,

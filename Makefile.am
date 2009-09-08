@@ -9,7 +9,6 @@ SUBDIRS = gme/Game_Music_Emu-0.5.2\
 		  plugins/hotkeys\
 		  plugins/lastfm\
 		  plugins/demac\
-		  ${APE_DIR}\
           ${MPGMAD_DIR}\
           ${VORBIS_DIR}\
           ${FLAC_DIR}
@@ -38,7 +37,7 @@ deadbeef_SOURCES =\
 	volume.c volume.h\
 	drawing.h gdkdrawing.c\
 	session.h session.c gtksession.c\
-	junklib.h junklib.c
+	junklib.h junklib.c utf8.c utf8.h
 
 sdkdir = $(pkgincludedir)
 sdk_HEADERS = deadbeef.h

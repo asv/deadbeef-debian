@@ -551,6 +551,7 @@ demac_seek (float seconds) {
         nblocks = 0;
         samplesdecoded = newsample-samplestoskip;
         plugin.info.readpos = seconds;
+        currentframe = nf;
     }
     else {
         // no seektable
@@ -628,6 +629,7 @@ static const char *filetypes[] = { "APE", NULL };
 
 // define plugin interface
 static DB_decoder_t plugin = {
+    DB_PLUGIN_SET_API_VERSION
     .plugin.version_major = 0,
     .plugin.version_minor = 1,
     .plugin.type = DB_PLUGIN_DECODER,
