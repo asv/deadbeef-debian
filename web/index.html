@@ -14,6 +14,39 @@
 
 <h1 id="news">News</h1>
 
+<h2>deadbeef-0.2.0 is out!</h2>
+<p>2009/09/08</p>
+<p><a href="#download">get it!</a></p>
+<p>Changelog since 0.1.1:</p>
+<p><i>please note this changelog is what most users would notice. actual changelog is 10 times bigger, and is not worth reading. i don't want to count each of 1000 bugfixes here.</i></p>
+<ul>
+    <li>plugin API - decoder and misc plugins working, other types are work in progress</li>
+    <li>most decoders are in plugins now, which means that most dependencies are optional (libmad, libFLAC, etc)</li>
+    <li>global hotkeys plugin</li>
+    <li>last.fm scrobbler plugin</li>
+    <li>added help page (under help menu)</li>
+    <li>huge amount of performance tweaks (including power consumption tweaks)</li>
+    <li>cuesheets embedded into FLAC's vorbis comments</li>
+    <li>24 bit flac support</li>
+    <li>$XDG_CONFIG_HOME env variable support</li>
+    <li>APE format support through libdemac</li>
+    <li>launcher (.desktop) file</li>
+    <li>scroll follows playback (optional)</li>
+    <li>no more "?" when no track number in tags</li>
+    <li>fixed seekbar accuracy bug</li>
+    <li>improved cuesheet reader</li>
+    <li>cuesheet text charset detection (utf8, iso8859-1, cp1251)</li>
+    <li>improved mp3 parser (better vbr duration calc, more accurate seeking, etc)</li>
+    <li>fixed bug when starting files from command line using relative paths</li>
+    <li>fixed order/loopmode session saving</li>
+    <li>fixed id3v2.2 reader</li>
+    <li>focus/deiconify window on trayicon click</li>
+    <li>X button no longer minimizes to tray by default (configurable)</li>
+    <li>search is now accessible from menu</li>
+    <li>column sizes are now saved between sessions</li>
+    <li>select multiple folders in "add folder(s)" dialog</li>
+</ul>
+
 <h2>tag loading/recoding policy</h2>
 <p>2009/09/06</p>
 <ul>
@@ -98,11 +131,11 @@ implemented basic session management, window size/position, volume, playmode are
 <p>Current alpha version features:</p>
 <ul>
     <li>written in C99 except sid module, because of libsidplay2, which only has a C++ API (though some 3rd party libraries are entirely in C++)</li>
-    <li>mp3, ogg vorbis, flac</li>
+    <li>mp3, ogg vorbis, flac, ape</li>
     <li>reading id3 v1, v2.2, v2.3, v2.4, apev2, xing/info tags for mp3</li>
     <li>character set detection for non-unicode id3 tags - supports cp1251 and iso8859-1</li>
     <li>unicode tags are fully supported as well (both utf8 and ucs2)</li>
-    <li>cuesheet support for mp3, ogg and flac</li>
+    <li>cuesheet support for mp3, ogg, flac, ape</li>
     <li>sid and some popular chiptune formats like nsf</li>
     <li>tracker modules like mod, s3m, it, xm, etc</li>
     <li>HVSC song length database support for sid</li>
@@ -112,8 +145,9 @@ implemented basic session management, window size/position, volume, playmode are
     <li>drag and drop, both inside of playlist, and from filemanagers and such</li>
     <li>control playback from command line (allows global hotkeys using xbindkeys)</li>
     <li>seeking works in all supported formats</li>
+    <li>plugin support; ships with several standard plugins, such as global hotkeys and last.fm scrobbler; sdk is included</li>
     <li>duration calculation is as precise as possible for vbr mp3 files (with and without xing/info tags)</li>
-    <li>fully functional on x86 and x86_64 architectures. ppc and ppc64 support untested, but may work as well</li>
+    <li>fully functional on x86 and x86_64 architectures. (was also tested on ppc64 - works, but has some problems)</li>
 </ul>
 <h1 id="license">Copying</h1>
 <pre>
@@ -135,9 +169,16 @@ implemented basic session management, window size/position, volume, playmode are
 </pre>
 
 <h1 id="download">Download</h1>
-<p><a href="http://sourceforge.net/projects/deadbeef/files/">browse all files</a></p>
+<h2>Latest version:</h2>
+<p>source code for version 0.2.0 <a href="http://sourceforge.net/projects/deadbeef/files/deadbeef-0.2.0.tar.gz/download">deadbeef-0.2.0.tar.gz</a></p>
+<p>official Arch Linux PKGBUILD: <a href="http://aur.archlinux.org/packages.php?ID=29497">here</a></p>
+<p>if you have yaourt, you can simply do yaourt -S deadbeef</p>
+<p>or <a href="http://sourceforge.net/projects/deadbeef/files/">browse all files</a></p>
+<p><b>unsupported</b> slackware package for version 0.2.0 from <a href="mailto:sftp.mtuci@gmail.com">sftp.mtuci@gmail.com</a>:</p>
+<p><a href="http://sourceforge.net/projects/deadbeef/files/deadbeef-0.2.0-i686-slack12.2_1.tgz/download">i686 slackware 12.2</a></p>
+<p>note: i have nothing to do with these packages, nor can i test them. use at your own risk</p>
+<h2>Old stuff</h2>
 <p>source code for version 0.1.1 <a href="http://sourceforge.net/projects/deadbeef/files/deadbeef-0.1.1.tar.gz/download">deadbeef-0.1.1.tar.gz</a></p>
-<p>Arch Linux PKGBUILD: <a href="http://aur.archlinux.org/packages.php?ID=29497">here</a></p>
 <p><b>unsupported</b> debian packages for version 0.1.1 from <a href="mailto:alexey.smirnov@gmx.com">sceptic</a>:</p>
 <p><a href="http://sourceforge.net/projects/deadbeef/files/deadbeef_0.1.1-1_i386.deb/download">i386</a>, <a href="http://sourceforge.net/projects/deadbeef/files/deadbeef_0.1.1-1_amd64.deb/download">x86_64</a></p>
 <p><b>unsupported</b> slackware packages for version 0.1.1 from <a href="mailto:sftp.mtuci@gmail.com">sftp.mtuci@gmail.com</a>:</p>
