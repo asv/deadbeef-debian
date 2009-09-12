@@ -11,13 +11,27 @@ Build-Depends: debhelper (>= 7),
                libogg-dev,
                libsamplerate0-dev,
                libflac-dev,
-               libasound2-dev
-Standards-Version: 3.7.3
+               libasound2-dev,
+               libx11-dev,
+               libcurl4-gnutls-dev
+Standards-Version: 3.8.3
 Homepage: http://deadbeef.sourceforge.net/
+
+Package: deadbeef-plugins-dev
+Section: devel
+Architecture: all
+Depends: deadbeef (= ${binary:Version})
+Description: DeaDBeeF plugins development files
+ DeaDBeeF (as in 0xDEADBEEF) is an audio player for GNU/Linux systems with X11.
+ .
+ This package contains all supplementary files you need to develop your plugins
+ for DeaDBeeF audio player.
 
 Package: deadbeef
 Architecture: any
 Depends: ${shlibs:Depends}
+Recommends: libflac8, libvorbis0a, libvorbisfile3, libmad0, libogg0
+Suggests: libcurl3-gnutls
 Description: ultimate music player for GNU/Linux systems
  DeaDBeeF (as in 0xDEADBEEF) is an audio player for GNU/Linux systems with X11.
  .
@@ -25,12 +39,12 @@ Description: ultimate music player for GNU/Linux systems
  .
   * written in C99 except sid module, because of libsidplay2, which only has a
     C++ API (though some 3rd party libraries are entirely in C++)
-  * mp3, ogg vorbis, flac
+  * mp3, ogg vorbis, flac, ape
   * reading id3 v1, v2.2, v2.3, v2.4, apev2, xing/info tags for mp3
   * character set detection for non-unicode id3 tags - supports cp1251
     and iso8859-1
   * unicode tags are fully supported as well (both utf8 and ucs2)
-  * cuesheet support for mp3, ogg and flac
+  * cuesheet support for mp3, ogg, flac, ape
   * sid and some popular chiptune formats like nsf
   * tracker modules like mod, s3m, it, xm, etc
   * HVSC song length database support for sid
@@ -40,5 +54,7 @@ Description: ultimate music player for GNU/Linux systems
   * drag and drop, both inside of playlist, and from filemanagers and such
   * control playback from command line (allows global hotkeys using xbindkeys)
   * seeking works in all supported formats
+  * plugin support; ships with several standard plugins, such as global hotkeys
+    and last.fm scrobbler; sdk is included
   * duration calculation is as precise as possible for vbr mp3
     files (with and without xing/info tags)

@@ -1,3 +1,13 @@
+deadbeef (0.2-1) unstable; urgency=low
+
+  * New upstream release.
+  * Bumped version-standards to 3.8.3, no changes needed.
+  * Transferring some of the dependencies in sections Recommends and Suggests.
+  * Minor changes in copyright and manpages.
+  * Now create deadbeef and deadbeef-plugins-dev packages.
+
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sat, 12 Sep 2009 22:02:08 +0600
+
 deadbeef (0.1.1-1) unstable; urgency=low
 
   * New upstream release.

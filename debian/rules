@@ -25,6 +25,7 @@ endif
 
 config.status: configure
 	dh_testdir
+	./bootstrap.sh
 	./configure $(CROSS) --prefix=/usr --mandir=\$${prefix}/share/man \
 		--infodir=\$${prefix}/share/info CFLAGS="$(CFLAGS)" LDFLAGS="-Wl,-z,defs"
 
@@ -39,7 +40,7 @@ clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp
-	[ ! -f Makefile ] || $(MAKE) distclean
+	-[ ! -f Makefile ] || $(MAKE) distclean
 	rm -f config.sub config.guess
 	dh_clean
 
@@ -48,14 +49,16 @@ install: build
 	dh_testroot
 	dh_clean -k
 	dh_installdirs
-	$(MAKE) DESTDIR=$(CURDIR)/debian/deadbeef install
+	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
 
+binary-indep:
 binary-arch: build install
 	dh_testdir
 	dh_testroot
 	dh_installchangelogs ChangeLog
 	dh_installdocs
 	dh_installexamples
+	dh_movefiles -XCOPYING
 #	dh_install
 	dh_installmenu
 #	dh_installdebconf
@@ -75,10 +78,10 @@ binary-arch: build install
 #	dh_perl
 #	dh_makeshlibs
 	dh_installdeb
-	dh_shlibdeps
+	dh_shlibdeps -Xflac.so -Xlastfm.so -Xmpgmad.so -Xvorbis.so
 	dh_gencontrol
 	dh_md5sums
 	dh_builddeb
 
 binary: binary-arch
-.PHONY: build clean binary-arch binary install
+.PHONY: build clean binary-indep binary-arch binary install
