@@ -3,7 +3,7 @@ AC_INIT
 AC_CONFIG_HEADER(config.h)
 
 PACKAGE="deadbeef"
-VERSION="0.2.1-dev"
+VERSION="0.2.2.1"
 
 AM_INIT_AUTOMAKE($PACKAGE,$VERSION)
 
@@ -11,36 +11,46 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_STDC_HEADERS
 AC_PROG_INSTALL
-dnl AC_PROG_RANLIB
 AC_PROG_LIBTOOL
 LT_INIT
 AC_CONFIG_MACRO_DIR([m4])
 AC_C_BIGENDIAN
-AC_DEFINE([PREFIX], [], [Installation prefix])
+
+case "$host" in
+  i386-*-* | i486-*-* | i586-*-* | i686-*-* | i86pc-*-*)
+    AC_DEFINE(ARCH_X86_32, 1, [architecture is x86])
+    ;;
+  x86_64-*-*)
+    AC_DEFINE(ARCH_X86_64, 1, [architecture is x86_64])
+    ;;
+  powerpc-*-* )
+    AC_DEFINE(ARCH_PPC_32, 1, [architecture is ppc32])
+    ;;
+  powerpc64-*-* )
+    AC_DEFINE(ARCH_PPC_64, 1, [architecture is ppc64])
+    ;;
+  *)
+    AC_DEFINE(ARCH_UNKNOWN, 1, [architecture is unknown])
+    ;;
+esac
 
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
-AC_DEFINE_UNQUOTED(PREFIX, "${prefix}")
 
-CFLAGS="$CFLAGS -D_GNU_SOURCE -O2 -DHAVE_UNIX"
+CFLAGS="$CFLAGS -D_GNU_SOURCE -DLIBDIR=\\\"$libdir\\\" -DPREFIX=\\\"$prefix\\\""
 CPPFLAGS="$CFLAGS"
 
 PKG_CHECK_MODULES(DEPS, gtk+-2.0 >= 2.12 gthread-2.0 glib-2.0 samplerate alsa)
 
-AX_EXT()
-
-dnl ape plugin
-dnl AC_CHECK_LIB([mac], [main], [HAVE_LIBMAC=1])
-dnl if test ${HAVE_LIBMAC}; then
-dnl     APE_LIBS="-lmac"
-dnl     APE_DIR="plugins/ape"
-dnl     AC_SUBST(APE_LIBS)
-dnl     AC_SUBST(APE_DIR)
-dnl fi
+AX_CHECK_COMPILER_FLAGS(-msse2, SIMD_FLAGS="$SIMD_FLAGS -msse2";HAVE_SSE2=1, [])
+if test ${HAVE_SSE2}; then
+    AC_DEFINE(HAVE_SSE2,1,[Support SSE2 instructions])
+fi
+AC_SUBST(SIMD_FLAGS)
 
 dnl lastfm plugin
-AC_CHECK_LIB([libcurl], [main], [HAVE_LIBCURL=1])
-if test ${HAVE_LIBCURL}; then
-    LFM_LIBS="-lmad"
+AC_CHECK_LIB([curl], [main], [HAVE_CURL=1])
+if test ${HAVE_CURL}; then
+    LFM_LIBS="-lcurl"
     LFM_DIR="plugins/lastfm"
     AC_SUBST(LFM_LIBS)
     AC_SUBST(LFM_DIR)
@@ -80,6 +90,7 @@ fi
 AC_OUTPUT([
 Makefile
 pixmaps/Makefile
+icons/Makefile
 gme/Game_Music_Emu-0.5.2/Makefile
 gme/Game_Music_Emu-0.5.2/gme/Makefile
 sid/sidplay-libs-2.1.0/Makefile

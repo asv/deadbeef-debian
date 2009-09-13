@@ -1,23 +1,30 @@
 /*
-  Basic UTF-8 manipulation routines
-  by Jeff Bezanson
-  placed in the public domain Fall 2005
+    DeaDBeeF - ultimate music player for GNU/Linux systems with X11
+    Copyright (C) 2009  Alexey Yakovenko
 
-  This code is designed to provide the utilities you need to manipulate
-  UTF-8 as an int32_ternal string encoding. These functions do not perform the
-  error checking normally needed when handling UTF-8 data, so if you happen
-  to be from the Unicode Consortium you will want to flay me alive.
-  I do this because error checking can be performed at the boundaries (I/O),
-  with these routines reserved for higher performance on data known to be
-  valid.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 2 of the License, or
+    (at your option) any later version.
 
-  adoption to deadbeef player by Alexey Yakovenko <waker@users.sourceforge.net>
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+    utf8 code is based on Basic UTF-8 manipulation routines
+    by Jeff Bezanson
+    placed in the public domain Fall 2005
 */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
 #include <alloca.h>
+#include "ctype.h"
 #include "utf8.h"
 
 static const uint32_t offsetsFromUTF8[6] = {
@@ -592,3 +599,74 @@ int u8_valid (const char  *str,
         return 1;
 }
 
+static const char lowerchars[] = "záéíñóúüäöåæøàçèéêабвгдеёжзийклмнорпстуфхцчшщъыьэюя";
+static const char upperchars[] = "ZÁÉÍÑÓÚÜÄÖÅÆØÀÇÈÉÊАБВГДЕЁЖЗИЙКЛМНОРПСТУФХЦЧШЩЪЫЬЭЮЯ";
+
+int
+u8_tolower (const signed char *c, int l, char *out) {
+    if (*c > 0) {
+        *out = tolower (*c);
+        out[1] = 0;
+        return 1;
+    }
+    else {
+        for (int i = 0; i < sizeof (upperchars)-l; i++) {
+            if (!memcmp (upperchars+i, c, l)) {
+                // found!
+                memcpy (out, lowerchars+i, l);
+                out[l] = 0;
+                return l;
+            }
+        }
+        memcpy (out, c, l);
+        out[l] = 0;
+        return l;
+    }
+}
+
+const char *
+utfcasestr (const char *s1, const char *s2) {
+#if 0 // small u8_tolower test
+    while (*s2) {
+        int32_t i = 0;
+        u8_nextchar (s2, &i);
+        const char *next = s2 + i;
+        char lw[10];
+        int l = u8_tolower (s2, next-s2, lw);
+        s2 = next;
+        fprintf (stderr, "%s", lw);
+    }
+    fprintf (stderr, "\n");
+    return NULL;
+#endif
+    while (*s1) {
+        const char *p1 = s1;
+        const char *p2 = s2;
+        while (*p2 && *p1) {
+            int32_t i1 = 0;
+            int32_t i2 = 0;
+            char lw1[10];
+            char lw2[10];
+            const char *next;
+            u8_nextchar (p1, &i1);
+            u8_nextchar (p2, &i2);
+            int l1 = u8_tolower (p1, i1, lw1);
+            int l2 = u8_tolower (p2, i2, lw2);
+            //fprintf (stderr, "comparing %s to %s\n", lw1, lw2);
+            if (strcmp (lw1, lw2)) {
+                //fprintf (stderr, "fail\n");
+                break;
+            }
+            p1 += i1;
+            p2 += i2;
+        }
+        if (*p2 == 0) {
+            //fprintf (stderr, "%s found in %s\n", s2, s1);
+            return p1;
+        }
+        int32_t i = 0;
+        u8_nextchar (s1, &i);
+        s1 += i;
+    }
+    return NULL;
+}

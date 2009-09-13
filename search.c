@@ -35,6 +35,8 @@
 #include "messagepump.h"
 #include "messages.h"
 
+#include "utf8.h"
+
 extern GtkWidget *searchwin;
 struct playItem_s *search_current = NULL;
 int search_count = 0;
@@ -65,7 +67,8 @@ on_searchentry_changed                 (GtkEditable     *editable,
     if (*text) {
         for (playItem_t *it = playlist_head[PL_MAIN]; it; it = it->next[PL_MAIN]) {
             for (metaInfo_t *m = it->meta; m; m = m->next) {
-                if (strcasestr (m->value, text)) {
+//                if (strcasestr (m->value, text)) {
+                if (utfcasestr (m->value, text)) {
                     // add to list
                     it->next[PL_SEARCH] = NULL;
                     if (playlist_tail[PL_SEARCH]) {
@@ -85,7 +88,7 @@ on_searchentry_changed                 (GtkEditable     *editable,
     extern gtkplaylist_t search_playlist;
     gtkplaylist_t *ps = &search_playlist;
     gtkpl_setup_scrollbar (ps);
-    memset (ps->fmtcache, 0, sizeof (int16_t) * 3 * pl_ncolumns * ps->nvisiblerows);
+    //memset (ps->fmtcache, 0, sizeof (int16_t) * 3 * pl_ncolumns * ps->nvisiblerows);
     gtkpl_draw_playlist (ps, 0, 0, ps->playlist->allocation.width, ps->playlist->allocation.height);
     gtkpl_expose (ps, 0, 0, ps->playlist->allocation.width, ps->playlist->allocation.height);
 }

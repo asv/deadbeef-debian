@@ -57,6 +57,7 @@ typedef struct {
     GtkWidget *playlist;
     GtkWidget *header;
     GtkWidget *scrollbar;
+    GtkWidget *hscrollbar;
     GdkPixmap *backbuf;
     GdkPixmap *backbuf_header;
     // parameters
@@ -67,19 +68,11 @@ typedef struct {
     int multisel; // if it uses multiple selection
     // current state
     int scrollpos;
+    int hscrollpos;
     int row;
     double clicktime; // for doubleclick detection
     int nvisiblerows;
     int nvisiblefullrows;
-// array of lengths and widths
-// N = number of columns
-// M = number of visible rows,
-// cache[(ROW*ncolumns+COLUMN)*3+0] --- position to insert "...", or -1 if the whole line fits
-// cache[(ROW*ncolumns+COLUMN)*3+1] --- width extent in pixels
-// cache[(ROW*ncolumns+COLUMN)*3+2] --- 0 if needs recalc
-    int16_t *fmtcache; // cached text formatting
-    int header_fitted[pl_ncolumns];
-    char colnames_fitted[pl_ncolumns][pl_colname_max]; // cached formatted names of columns
     int *colwidths;//[pl_ncolumns]; // current column widths
 } gtkplaylist_t;
 
@@ -125,6 +118,9 @@ gtkpl_mousemove (gtkplaylist_t *ps, GdkEventMotion *event);
 
 void
 gtkpl_scroll (gtkplaylist_t *ps, int newscroll);
+
+void
+gtkpl_hscroll (gtkplaylist_t *ps, int newscroll);
 
 void
 gtkpl_handle_scroll_event (gtkplaylist_t *ps, int direction);

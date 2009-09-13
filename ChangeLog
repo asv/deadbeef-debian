@@ -1,3 +1,26 @@
+version 0.2.2.1
+	fixed playlist drawing regressions encountered in 0.2.2
+
+version 0.2.2	
+	fixed several build problems reported by users
+	added app icons, updated launcher script
+	proper sse2 detection and usage in ape plugin
+	reduced volumebar range to -50dB
+	horizontal scrolling in playlist
+	pango is now used for ellipsizing
+	case-insensitive search using russian, danish, french and other alphabets
+	vertical scroll is much faster now
+
+version 0.2.1
+	new ape decoder - faster, doesn't crash
+	fixed APEv2 tag reader
+	fixed id3 tag reader on big-endian systems
+	player now builds without errors on big-endian systems
+	memory for HVSC song length database is now allocated on demand
+	fixed icons in system tray menu
+	fixed color detection for column header text
+	improved cuesheet reader (pregap support and better bounds checking)
+
 version 0.2.0
 	plugin API - decoder and misc plugins working, other types are work in progress
 	most decoders are in plugins now, which means that most dependencies are optional (libmad, libFLAC, etc)
