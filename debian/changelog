@@ -1,3 +1,10 @@
+deadbeef (0.2.2.2-2) unstable; urgency=low
+
+  * Restructure build rules to use debhelper more,
+    and migrate to debhelper 7.
+
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Mon, 21 Sep 2009 11:47:25 +0600
+
 deadbeef (0.2.2.2-1) unstable; urgency=low
 
   * New upstream release, bugfix only.
