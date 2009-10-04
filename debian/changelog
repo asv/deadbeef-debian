@@ -1,3 +1,10 @@
+deadbeef (0.2.3.1-1) unstable; urgency=low
+
+  * New upstream release.
+  * Added new dependencies: libsndfile1 and libwavpack.
+
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sun, 04 Oct 2009 20:43:23 +0600
+
 deadbeef (0.2.2.2-2) unstable; urgency=low
 
   * Restructure build rules to use debhelper more,

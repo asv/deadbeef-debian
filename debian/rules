@@ -6,11 +6,12 @@ export DH_ALWAYS_EXCLUDE := COPYING
 	dh $@
 
 override_dh_auto_configure:
-	./bootstrap.sh
+	./autogen.sh
 	dh_auto_configure
 
 override_dh_makeshlibs:
 	dh_makeshlibs -n
 
 override_dh_shlibdeps:
-	dh_shlibdeps -Xflac.so -Xlastfm.so -Xmpgmad.so -Xvorbis.so
+	dh_shlibdeps -Xflac.so -Xlastfm.so -Xmpgmad.so \
+		-Xvorbis.so -Xsndfile.so -Xwavpack.so
