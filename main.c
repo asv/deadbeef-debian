@@ -91,25 +91,27 @@ update_songinfo (void) {
     float songpos = last_songpos;
     if (p_ispaused ()) {
         strcpy (sbtext_new, "Paused");
+        songpos = streamer_get_playpos ();
     }
     else if (p_isstopped ()) {
         strcpy (sbtext_new, "Stopped");
+        songpos = 0;
     }
-    else if (playlist_current.decoder) {
+    else if (str_playing_song.decoder) {
         codec_lock ();
-        DB_decoder_t *c = playlist_current.decoder;
+        DB_decoder_t *c = str_playing_song.decoder;
         float playpos = streamer_get_playpos ();
         int minpos = playpos / 60;
         int secpos = playpos - minpos * 60;
-        int mindur = playlist_current.duration / 60;
-        int secdur = playlist_current.duration - mindur * 60;
+        int mindur = str_playing_song.duration / 60;
+        int secdur = str_playing_song.duration - mindur * 60;
         const char *mode = c->info.channels == 1 ? "Mono" : "Stereo";
         int samplerate = c->info.samplerate;
         int bitspersample = c->info.bps;
         songpos = playpos;
         codec_unlock ();
 
-        snprintf (sbtext_new, 512, "[%s] %dHz | %d bit | %s | %d:%02d / %d:%02d | %d songs total", playlist_current.filetype ? playlist_current.filetype:"-", samplerate, bitspersample, mode, minpos, secpos, mindur, secdur, pl_getcount ());
+        snprintf (sbtext_new, 512, "[%s] %dHz | %d bit | %s | %d:%02d / %d:%02d | %d songs total", str_playing_song.filetype ? str_playing_song.filetype:"-", samplerate, bitspersample, mode, minpos, secpos, mindur, secdur, pl_getcount ());
     }
 
     if (strcmp (sbtext_new, sb_text)) {
@@ -135,7 +137,7 @@ update_songinfo (void) {
         if (mainwin) {
             GtkWidget *widget = lookup_widget (mainwin, "seekbar");
             // translate volume to seekbar pixels
-            songpos /= playlist_current.duration;
+            songpos /= str_playing_song.duration;
             songpos *= widget->allocation.width;
             if ((int)(songpos*2) != (int)(last_songpos*2)) {
                 GDK_THREADS_ENTER();
@@ -357,12 +359,14 @@ player_thread (uintptr_t ctx) {
                 if (from >= 0 || to >= 0) {
                     if (to >= 0) {
                         playItem_t *it = pl_get_for_idx (to);
-                        char str[600];
-                        char dname[512];
-                        pl_format_item_display_name (it, dname, 512);
-                        snprintf (str, 600, "DeaDBeeF - %s", dname);
-                        gtk_window_set_title (GTK_WINDOW (mainwin), str);
-                        set_tray_tooltip (str);
+                        if (it) { // it might have been deleted after event was sent
+                            char str[600];
+                            char dname[512];
+                            pl_format_item_display_name (it, dname, 512);
+                            snprintf (str, 600, "DeaDBeeF - %s", dname);
+                            gtk_window_set_title (GTK_WINDOW (mainwin), str);
+                            set_tray_tooltip (str);
+                        }
                     }
                     else {
                         gtk_window_set_title (GTK_WINDOW (mainwin), "DeaDBeeF");
@@ -376,6 +380,11 @@ player_thread (uintptr_t ctx) {
                 break;
             case M_PLAYSONG:
                 gtkpl_playsong (&main_playlist);
+                GDK_THREADS_ENTER();
+                if (playlist_current_ptr) {
+                    gtkpl_redraw_pl_row (&main_playlist, pl_get_idx_of (playlist_current_ptr), playlist_current_ptr);
+                }
+                GDK_THREADS_LEAVE();
                 break;
             case M_PLAYSONGNUM:
                 GDK_THREADS_ENTER();

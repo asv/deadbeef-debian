@@ -3,7 +3,7 @@ AC_INIT
 AC_CONFIG_HEADER(config.h)
 
 PACKAGE="deadbeef"
-VERSION="0.2.2.2"
+VERSION="0.2.3.1"
 
 AM_INIT_AUTOMAKE($PACKAGE,$VERSION)
 
@@ -86,6 +86,25 @@ if test ${HAVE_FLAC} ; then
     AC_SUBST(FLAC_DIR)
 fi
 
+dnl wavpack plugin
+AC_CHECK_LIB([wavpack], [main], [HAVE_WAVPACK=1])
+
+if test ${HAVE_WAVPACK} ; then
+    WAVPACK_LIBS="-lwavpack"
+    WAVPACK_DIR="plugins/wavpack"
+    AC_SUBST(WAVPACK_LIBS)
+    AC_SUBST(WAVPACK_DIR)
+fi
+
+dnl libsndfile plugin
+AC_CHECK_LIB([sndfile], [main], [HAVE_SNDFILE=1])
+
+if test ${HAVE_SNDFILE} ; then
+    SNDFILE_LIBS="-lsndfile"
+    SNDFILE_DIR="plugins/sndfile"
+    AC_SUBST(SNDFILE_LIBS)
+    AC_SUBST(SNDFILE_DIR)
+fi
 
 AC_OUTPUT([
 Makefile
@@ -101,6 +120,8 @@ plugins/ffap/Makefile
 plugins/mpgmad/Makefile
 plugins/vorbis/Makefile
 plugins/flac/Makefile
+plugins/wavpack/Makefile
+plugins/sndfile/Makefile
 deadbeef.desktop
 ])
 
