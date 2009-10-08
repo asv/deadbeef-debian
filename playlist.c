@@ -175,10 +175,10 @@ pl_process_cue_track (playItem_t *after, const char *fname, playItem_t **prev, c
             // PREGAP command
             prevtime = f_index01 - f_pregap;
         }
-        else if (index00[0]) {
-            // pregap in index 00
-            prevtime = f_index00;
-        }
+//        else if (index00[0] && index01[0]) {
+//            // pregap in index 00
+//            prevtime = f_index00;
+//        }
         else if (index01[0]) {
             // no pregap
             prevtime = f_index01;
@@ -187,8 +187,22 @@ pl_process_cue_track (playItem_t *after, const char *fname, playItem_t **prev, c
             return after;
         }
         (*prev)->endsample = (prevtime * samplerate) - 1;
-        trace ("calc endsample=%d, prevtime=%f, samplerate=%d\n", (*prev)->endsample,  prevtime, samplerate);
         (*prev)->duration = (float)((*prev)->endsample - (*prev)->startsample + 1) / samplerate;
+        if ((*prev)->duration < 0) {
+            // might be bad cuesheet file, try to fix
+            trace ("cuesheet seems to be corrupted, trying workaround\n");
+            trace ("[bad:] calc endsample=%d, prevtime=%f, samplerate=%d, prev track duration=%f\n", (*prev)->endsample,  prevtime, samplerate, (*prev)->duration);
+            prevtime = f_index01;
+            (*prev)->endsample = (prevtime * samplerate) - 1;
+            (*prev)->duration = (float)((*prev)->endsample - (*prev)->startsample + 1) / samplerate;
+            if ((*prev)->duration > 0) {
+                trace ("success :-D\n");
+            }
+            else {
+                trace ("fail :-(\n");
+            }
+        }
+        trace ("calc endsample=%d, prevtime=%f, samplerate=%d, prev track duration=%f\n", (*prev)->endsample,  prevtime, samplerate, (*prev)->duration);
     }
     // non-compliant hack to handle tracks which only store pregap info
     if (!index01[0]) {
@@ -203,9 +217,6 @@ pl_process_cue_track (playItem_t *after, const char *fname, playItem_t **prev, c
     float t = 0;
     if (index01[0]) {
         t = f_index01;
-    }
-    else {
-        t = f_index00;
     }
     it->startsample = t * samplerate;
 
@@ -1110,6 +1121,7 @@ pl_load (const char *fname) {
     DB_decoder_t **decoders = plug_get_decoder_list ();
     uint8_t majorver;
     uint8_t minorver;
+    playItem_t *it = NULL;
     FILE *fp = fopen (fname, "rb");
     if (!fp) {
         return -1;
@@ -1137,7 +1149,6 @@ pl_load (const char *fname) {
     if (fread (&cnt, 1, 4, fp) != 4) {
         goto load_fail;
     }
-    playItem_t *it = NULL;
     for (uint32_t i = 0; i < cnt; i++) {
         it = malloc (sizeof (playItem_t));
         if (!it) {
