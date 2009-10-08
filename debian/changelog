@@ -1,3 +1,9 @@
+deadbeef (0.2.3.2-1) unstable; urgency=low
+
+  * New upstream release, bugfix only.
+
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Thu, 08 Oct 2009 19:00:40 +0600
+
 deadbeef (0.2.3.1-1) unstable; urgency=low
 
   * New upstream release.
