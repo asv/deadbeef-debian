@@ -86,7 +86,7 @@ create_mainwin (void)
   GtkWidget *hbox2;
   GtkWidget *hbox3;
   GtkWidget *stopbtn;
-  GtkWidget *image7;
+  GtkWidget *image128;
   GtkWidget *playbtn;
   GtkWidget *image2;
   GtkWidget *pausebtn;
@@ -95,10 +95,9 @@ create_mainwin (void)
   GtkWidget *image4;
   GtkWidget *nextbtn;
   GtkWidget *image5;
-  GtkWidget *playrand;
-  GtkWidget *image6;
-  GtkWidget *volumebar;
   GtkWidget *seekbar;
+  GtkWidget *volumebar;
+  GtkWidget *frame1;
   GtkWidget *table1;
   GtkWidget *_;
   GtkWidget *vbox3;
@@ -350,7 +349,7 @@ create_mainwin (void)
 
   hbox3 = gtk_hbox_new (FALSE, 0);
   gtk_widget_show (hbox3);
-  gtk_box_pack_start (GTK_BOX (hbox2), hbox3, TRUE, TRUE, 0);
+  gtk_box_pack_start (GTK_BOX (hbox2), hbox3, FALSE, TRUE, 0);
 
   stopbtn = gtk_button_new ();
   gtk_widget_show (stopbtn);
@@ -361,9 +360,9 @@ create_mainwin (void)
                               GTK_ACCEL_VISIBLE);
   gtk_button_set_relief (GTK_BUTTON (stopbtn), GTK_RELIEF_NONE);
 
-  image7 = create_pixmap (mainwin, "stop_24.png");
-  gtk_widget_show (image7);
-  gtk_container_add (GTK_CONTAINER (stopbtn), image7);
+  image128 = gtk_image_new_from_stock ("gtk-media-stop", GTK_ICON_SIZE_BUTTON);
+  gtk_widget_show (image128);
+  gtk_container_add (GTK_CONTAINER (stopbtn), image128);
 
   playbtn = gtk_button_new ();
   gtk_widget_show (playbtn);
@@ -377,7 +376,7 @@ create_mainwin (void)
                               GTK_ACCEL_VISIBLE);
   gtk_button_set_relief (GTK_BUTTON (playbtn), GTK_RELIEF_NONE);
 
-  image2 = create_pixmap (mainwin, "play_24.png");
+  image2 = gtk_image_new_from_stock ("gtk-media-play", GTK_ICON_SIZE_BUTTON);
   gtk_widget_show (image2);
   gtk_container_add (GTK_CONTAINER (playbtn), image2);
 
@@ -393,7 +392,7 @@ create_mainwin (void)
                               GTK_ACCEL_VISIBLE);
   gtk_button_set_relief (GTK_BUTTON (pausebtn), GTK_RELIEF_NONE);
 
-  image3 = create_pixmap (mainwin, "pause_24.png");
+  image3 = gtk_image_new_from_stock ("gtk-media-pause", GTK_ICON_SIZE_BUTTON);
   gtk_widget_show (image3);
   gtk_container_add (GTK_CONTAINER (pausebtn), image3);
 
@@ -406,7 +405,7 @@ create_mainwin (void)
                               GTK_ACCEL_VISIBLE);
   gtk_button_set_relief (GTK_BUTTON (prevbtn), GTK_RELIEF_NONE);
 
-  image4 = create_pixmap (mainwin, "prev_24.png");
+  image4 = gtk_image_new_from_stock ("gtk-media-previous", GTK_ICON_SIZE_BUTTON);
   gtk_widget_show (image4);
   gtk_container_add (GTK_CONTAINER (prevbtn), image4);
 
@@ -419,22 +418,15 @@ create_mainwin (void)
                               GTK_ACCEL_VISIBLE);
   gtk_button_set_relief (GTK_BUTTON (nextbtn), GTK_RELIEF_NONE);
 
-  image5 = create_pixmap (mainwin, "next_24.png");
+  image5 = gtk_image_new_from_stock ("gtk-media-next", GTK_ICON_SIZE_BUTTON);
   gtk_widget_show (image5);
   gtk_container_add (GTK_CONTAINER (nextbtn), image5);
 
-  playrand = gtk_button_new ();
-  gtk_widget_show (playrand);
-  gtk_box_pack_start (GTK_BOX (hbox3), playrand, FALSE, FALSE, 0);
-  GTK_WIDGET_UNSET_FLAGS (playrand, GTK_CAN_FOCUS);
-  gtk_widget_add_accelerator (playrand, "activate", accel_group,
-                              GDK_n, (GdkModifierType) 0,
-                              GTK_ACCEL_VISIBLE);
-  gtk_button_set_relief (GTK_BUTTON (playrand), GTK_RELIEF_NONE);
-
-  image6 = create_pixmap (mainwin, "random_24.png");
-  gtk_widget_show (image6);
-  gtk_container_add (GTK_CONTAINER (playrand), image6);
+  seekbar = gtk_drawing_area_new ();
+  gtk_widget_show (seekbar);
+  gtk_box_pack_start (GTK_BOX (hbox2), seekbar, TRUE, TRUE, 2);
+  gtk_widget_set_size_request (seekbar, 200, -1);
+  gtk_widget_set_events (seekbar, GDK_EXPOSURE_MASK | GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK);
 
   volumebar = gtk_drawing_area_new ();
   gtk_widget_show (volumebar);
@@ -442,22 +434,20 @@ create_mainwin (void)
   gtk_widget_set_size_request (volumebar, 70, -1);
   gtk_widget_set_events (volumebar, GDK_EXPOSURE_MASK | GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK);
 
-  seekbar = gtk_drawing_area_new ();
-  gtk_widget_show (seekbar);
-  gtk_box_pack_start (GTK_BOX (hbox2), seekbar, FALSE, TRUE, 2);
-  gtk_widget_set_size_request (seekbar, 200, -1);
-  gtk_widget_set_events (seekbar, GDK_EXPOSURE_MASK | GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK);
+  frame1 = gtk_frame_new (NULL);
+  gtk_widget_show (frame1);
+  gtk_box_pack_start (GTK_BOX (vbox1), frame1, TRUE, TRUE, 0);
+  gtk_container_set_border_width (GTK_CONTAINER (frame1), 1);
 
   table1 = gtk_table_new (2, 2, FALSE);
   gtk_widget_show (table1);
-  gtk_box_pack_start (GTK_BOX (vbox1), table1, TRUE, TRUE, 0);
+  gtk_container_add (GTK_CONTAINER (frame1), table1);
 
   _ = gtk_hbox_new (FALSE, 0);
   gtk_widget_show (_);
   gtk_table_attach (GTK_TABLE (table1), _, 0, 1, 0, 1,
                     (GtkAttachOptions) (GTK_EXPAND | GTK_FILL),
                     (GtkAttachOptions) (GTK_EXPAND | GTK_FILL), 0, 0);
-  gtk_container_set_border_width (GTK_CONTAINER (_), 3);
 
   vbox3 = gtk_vbox_new (FALSE, 0);
   gtk_widget_show (vbox3);
@@ -586,8 +576,20 @@ create_mainwin (void)
   g_signal_connect ((gpointer) nextbtn, "clicked",
                     G_CALLBACK (on_nextbtn_clicked),
                     NULL);
-  g_signal_connect ((gpointer) playrand, "clicked",
-                    G_CALLBACK (on_playrand_clicked),
+  g_signal_connect ((gpointer) seekbar, "button_press_event",
+                    G_CALLBACK (on_seekbar_button_press_event),
+                    NULL);
+  g_signal_connect ((gpointer) seekbar, "button_release_event",
+                    G_CALLBACK (on_seekbar_button_release_event),
+                    NULL);
+  g_signal_connect ((gpointer) seekbar, "configure_event",
+                    G_CALLBACK (on_seekbar_configure_event),
+                    NULL);
+  g_signal_connect ((gpointer) seekbar, "expose_event",
+                    G_CALLBACK (on_seekbar_expose_event),
+                    NULL);
+  g_signal_connect ((gpointer) seekbar, "motion_notify_event",
+                    G_CALLBACK (on_seekbar_motion_notify_event),
                     NULL);
   g_signal_connect ((gpointer) volumebar, "button_press_event",
                     G_CALLBACK (on_volumebar_button_press_event),
@@ -606,21 +608,6 @@ create_mainwin (void)
                     NULL);
   g_signal_connect ((gpointer) volumebar, "scroll_event",
                     G_CALLBACK (on_volumebar_scroll_event),
-                    NULL);
-  g_signal_connect ((gpointer) seekbar, "button_press_event",
-                    G_CALLBACK (on_seekbar_button_press_event),
-                    NULL);
-  g_signal_connect ((gpointer) seekbar, "button_release_event",
-                    G_CALLBACK (on_seekbar_button_release_event),
-                    NULL);
-  g_signal_connect ((gpointer) seekbar, "configure_event",
-                    G_CALLBACK (on_seekbar_configure_event),
-                    NULL);
-  g_signal_connect ((gpointer) seekbar, "expose_event",
-                    G_CALLBACK (on_seekbar_expose_event),
-                    NULL);
-  g_signal_connect ((gpointer) seekbar, "motion_notify_event",
-                    G_CALLBACK (on_seekbar_motion_notify_event),
                     NULL);
   g_signal_connect ((gpointer) header, "expose_event",
                     G_CALLBACK (on_header_expose_event),
@@ -751,7 +738,7 @@ create_mainwin (void)
   GLADE_HOOKUP_OBJECT (mainwin, hbox2, "hbox2");
   GLADE_HOOKUP_OBJECT (mainwin, hbox3, "hbox3");
   GLADE_HOOKUP_OBJECT (mainwin, stopbtn, "stopbtn");
-  GLADE_HOOKUP_OBJECT (mainwin, image7, "image7");
+  GLADE_HOOKUP_OBJECT (mainwin, image128, "image128");
   GLADE_HOOKUP_OBJECT (mainwin, playbtn, "playbtn");
   GLADE_HOOKUP_OBJECT (mainwin, image2, "image2");
   GLADE_HOOKUP_OBJECT (mainwin, pausebtn, "pausebtn");
@@ -760,10 +747,9 @@ create_mainwin (void)
   GLADE_HOOKUP_OBJECT (mainwin, image4, "image4");
   GLADE_HOOKUP_OBJECT (mainwin, nextbtn, "nextbtn");
   GLADE_HOOKUP_OBJECT (mainwin, image5, "image5");
-  GLADE_HOOKUP_OBJECT (mainwin, playrand, "playrand");
-  GLADE_HOOKUP_OBJECT (mainwin, image6, "image6");
-  GLADE_HOOKUP_OBJECT (mainwin, volumebar, "volumebar");
   GLADE_HOOKUP_OBJECT (mainwin, seekbar, "seekbar");
+  GLADE_HOOKUP_OBJECT (mainwin, volumebar, "volumebar");
+  GLADE_HOOKUP_OBJECT (mainwin, frame1, "frame1");
   GLADE_HOOKUP_OBJECT (mainwin, table1, "table1");
   GLADE_HOOKUP_OBJECT (mainwin, _, "_");
   GLADE_HOOKUP_OBJECT (mainwin, vbox3, "vbox3");
@@ -784,6 +770,7 @@ create_searchwin (void)
   GtkWidget *searchwin;
   GtkWidget *vbox4;
   GtkWidget *searchentry;
+  GtkWidget *frame2;
   GtkWidget *table2;
   GtkWidget *searchscroll;
   GtkWidget *vbox5;
@@ -810,9 +797,13 @@ create_searchwin (void)
   gtk_entry_set_invisible_char (GTK_ENTRY (searchentry), 8226);
   gtk_entry_set_activates_default (GTK_ENTRY (searchentry), TRUE);
 
+  frame2 = gtk_frame_new (NULL);
+  gtk_widget_show (frame2);
+  gtk_box_pack_start (GTK_BOX (vbox4), frame2, TRUE, TRUE, 0);
+
   table2 = gtk_table_new (2, 2, FALSE);
   gtk_widget_show (table2);
-  gtk_box_pack_start (GTK_BOX (vbox4), table2, TRUE, TRUE, 0);
+  gtk_container_add (GTK_CONTAINER (frame2), table2);
 
   searchscroll = gtk_vscrollbar_new (GTK_ADJUSTMENT (gtk_adjustment_new (0, 0, 1, 1, 0, 0)));
   gtk_widget_show (searchscroll);
@@ -900,6 +891,7 @@ create_searchwin (void)
   GLADE_HOOKUP_OBJECT_NO_REF (searchwin, searchwin, "searchwin");
   GLADE_HOOKUP_OBJECT (searchwin, vbox4, "vbox4");
   GLADE_HOOKUP_OBJECT (searchwin, searchentry, "searchentry");
+  GLADE_HOOKUP_OBJECT (searchwin, frame2, "frame2");
   GLADE_HOOKUP_OBJECT (searchwin, table2, "table2");
   GLADE_HOOKUP_OBJECT (searchwin, searchscroll, "searchscroll");
   GLADE_HOOKUP_OBJECT (searchwin, vbox5, "vbox5");

@@ -440,7 +440,7 @@ pl_insert_pls (playItem_t *after, const char *fname, int *pabort, int (*cb)(play
     }
     if (sz < 30) {
         vfs_fclose (fp);
-        trace ("file %s is too small to be a playlist\n", fname);
+        trace ("file %s is too small to be a playlist (%d)\n", fname, sz);
         return NULL;
     }
     vfs_rewind (fp);
@@ -1398,7 +1398,6 @@ pl_load (const char *fname) {
             goto load_fail;
         }
         it->_duration = d;
-        pl_totaltime += d;
         // get const filetype string from decoder
         uint8_t ft;
         if (fread (&ft, 1, 1, fp) != 1) {
@@ -1460,6 +1459,7 @@ pl_load (const char *fname) {
                 "comment",
                 "track",
                 "band",
+                "cuesheet",
                 NULL
             };
 

@@ -546,6 +546,9 @@ on_trayicon_button_press_event (GtkWidget       *widget,
             gtk_window_present (GTK_WINDOW (mainwin));
         }
     }
+    else if (event->button == 2) {
+        messagepump_push (M_PAUSESONG, 0, 0, 0);
+    }
     return FALSE;
 }
 
@@ -625,7 +628,16 @@ main (int argc, char *argv[]) {
             if (len >= size) {
                 break;
             }
-            memcpy (p, argv[i], len+1);
+            char resolved[PATH_MAX];
+            // need to resolve path here, because remote doesn't know current
+            // path of this process
+            if (argv[i][0] != '-' && realpath (argv[i], resolved)) {
+                len = strlen (resolved);
+                memcpy (p, resolved, len+1);
+            }
+            else {
+                memcpy (p, argv[i], len+1);
+            }
             p += len;
             size -= len;
         }
