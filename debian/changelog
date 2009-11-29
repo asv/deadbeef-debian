@@ -1,9 +1,15 @@
+deadbeef (0.3.1-1) unstable; urgency=low
+
+  * New upstream release, deadbeef 0.3.1.
+
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sun, 29 Nov 2009 13:31:42 +0500
+
 deadbeef (0.3.0-1) unstable; urgency=low
 
   * New upstream release.
   * Add depends: libcddb2, libcdio7.
 
- -- Alexey Smirnov <alexey.smirnov@gmx.com>  Wed, 18 Nov 2009 16:12:43 +0500
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sun, 29 Nov 2009 13:28:56 +0500
 
 deadbeef (0.2.3.2-1) unstable; urgency=low
 
