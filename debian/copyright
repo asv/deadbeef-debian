@@ -14,6 +14,7 @@ Copyright:
 
     Copyright (C) 2009 by Alexey Yakovenko <waker@users.sourceforge.net>
     Copyright (C) by Viktor Semykin <thesame.ml@gmail.com>
+    Copyright (C) Stas Akimushkin <uncle.lag@gmail.com>
 
 License:
 
@@ -33,6 +34,52 @@ License:
 
 On Debian systems, the complete text of the GNU General
 Public License can be found in `/usr/share/common-licenses/GPL'.
+
+Some parts of the code have other copyright holders or licenses:
+
+gme/Game_Music_Emu-0.5.2/*: Game Music Emulators
+    Copyright (c) 2003-2006 Shay Green <gblargg@gmail.com>
+    Licensed under LGPL license.
+
+dumb/*: DUMB - Dynamic Universal Music Bibliotheque
+    Copyright (c) 2001-2005 Ben Davis, Robert J Ohannessian and Julien Cugniere.
+
+    License:
+
+    This software is provided 'as-is', without any express or implied warranty.
+    In no event shall the authors be held liable for any damages arising from the
+    use of this software.
+
+    Permission is granted to anyone to use this software for any purpose,
+    including commercial applications, and to alter it and redistribute it
+    freely, subject to the following restrictions:
+
+    1. The origin of this software must not be misrepresented; you must not claim
+       that you wrote the original software. If you use this software in a
+       product, you are requested to acknowledge its use in the product
+       documentation, along with details on where to get an unmodified version of
+       this software, but this is not a strict requirement.
+
+       [Note that the above point asks for a link to DUMB, not just a mention.
+       Googling for DUMB doesn't help much! The URL is "http://dumb.sf.net/".]
+
+       [The only reason why the link is not strictly required is that such a
+       requirement prevents DUMB from being used in projects with certain other
+       licences, notably the GPL. See http://www.gnu.org/philosophy/bsd.html .]
+
+    2. Altered source versions must be plainly marked as such, and must not be
+       misrepresented as being the original software.
+
+    3. This notice may not be removed from or altered in any source distribution.
+
+md5/*: Functions to compute MD5 message digest of files or memory blocks
+    Written by Ulrich Drepper <drepper@gnu.ai.mit.edu>, 1995.
+    Modified by Gray Watson <http://256.com/gray/>, 1997.
+    Licensed under GPL license.
+
+sid/sidplay-libs-2.1.0/*: commodore 64 SID emulation library
+    Copyright (c) 2000-2004 Simon White <sidplay2@email.com>
+    Licensed under GPL license.
 
 The Debian packaging is (C) 2009, Alexey Smirnov <alexey.smirnov@gmx.com> and
 is licensed under the GPL, see above.

@@ -39,16 +39,15 @@ Suggests: libcurl3-gnutls
 Description: ultimate music player for GNU/Linux systems
  DeaDBeeF (as in 0xDEADBEEF) is an audio player for GNU/Linux systems with X11.
  .
- Current version features:
+ Features:
  .
-  * written in C99 except sid module, because of libsidplay2, which only has a
-    C++ API (though some 3rd party libraries are entirely in C++)
-  * mp3, ogg vorbis, flac, ape
-  * reading id3 v1, v2.2, v2.3, v2.4, apev2, xing/info tags for mp3
-  * character set detection for non-unicode id3 tags - supports cp1251
+  * mp3, ogg vorbis, flac, ape, wv, wav
+  * ID3v1, ID3v2.2, ID3v2.3, ID3v2.4, APEv2, xing/info tags support
+  * character set detection for non-unicode ID3 tags - supports cp1251
     and iso8859-1
   * unicode tags are fully supported as well (both utf8 and ucs2)
   * cuesheet support for mp3, ogg, flac, ape
+  * autodetection of utf8/cp1251/iso8859-1 charsets in cuesheets
   * sid and some popular chiptune formats like nsf
   * tracker modules like mod, s3m, it, xm, etc
   * HVSC song length database support for sid

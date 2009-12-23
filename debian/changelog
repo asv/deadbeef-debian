@@ -1,3 +1,10 @@
+deadbeef (0.3.1-2) unstable; urgency=low
+
+  * Update long description of package.
+  * Update debian/copyright.
+
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Thu, 24 Dec 2009 01:25:31 +0500
+
 deadbeef (0.3.1-1) unstable; urgency=low
 
   * New upstream release, deadbeef 0.3.1.
