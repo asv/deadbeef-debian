@@ -72,6 +72,17 @@ dumb/*: DUMB - Dynamic Universal Music Bibliotheque
 
     3. This notice may not be removed from or altered in any source distribution.
 
+    4. If you are using the Program in someone else's bedroom at any Monday
+       3:05 PM, you are not allowed to modify the Program for ten minutes. [This
+       clause provided by Inphernic; every licence should contain at least one
+       clause, the reasoning behind which is far from obvious.]
+
+    [Note: clause 4 was resigned after a quick IRC talk with the author]
+
+    [Note 2: if I did not mention /usr/share/common-licenses here, lintian
+             would complain because he found the words "GPL" above, but this
+             software is not GPL. It is GPL-compatible, though.]
+
 md5/*: Functions to compute MD5 message digest of files or memory blocks
     Written by Ulrich Drepper <drepper@gnu.ai.mit.edu>, 1995.
     Modified by Gray Watson <http://256.com/gray/>, 1997.
