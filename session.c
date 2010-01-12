@@ -1,6 +1,6 @@
 /*
     DeaDBeeF - ultimate music player for GNU/Linux systems with X11
-    Copyright (C) 2009  Alexey Yakovenko
+    Copyright (C) 2009-2010 Alexey Yakovenko <waker@users.sourceforge.net>
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -39,6 +39,7 @@ void
 session_reset (void) {
 }
 
+#if 0
 static int
 write_i16_be (uint16_t val, FILE *fp) {
     uint8_t b;
@@ -74,6 +75,7 @@ write_i32_be (uint32_t val, FILE *fp) {
     }
     return 4;
 }
+#endif
 
 static int
 read_i16_be (uint16_t *pval, FILE *fp) {

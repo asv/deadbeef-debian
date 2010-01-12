@@ -1,6 +1,6 @@
 /*
     DeaDBeeF - ultimate music player for GNU/Linux systems with X11
-    Copyright (C) 2009  Alexey Yakovenko
+    Copyright (C) 2009-2010 Alexey Yakovenko <waker@users.sourceforge.net>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,7 +35,6 @@ conf_load (void) {
         return -1;
     }
     int line = 0;
-    DB_conf_item_t *tail = NULL;
     while (fgets (str, 1024, fp) != NULL) {
         line++;
         if (str[0] == '#' || str[0] <= 0x20) {

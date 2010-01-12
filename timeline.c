@@ -1,6 +1,6 @@
 /*
     DeaDBeeF - ultimate music player for GNU/Linux systems with X11
-    Copyright (C) 2009  Alexey Yakovenko
+    Copyright (C) 2009-2010 Alexey Yakovenko <waker@users.sourceforge.net>
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -68,7 +68,7 @@ timeline_stop (timeline_t *tl, int wait) {
 }
 
 void
-timeline_thread_func (uintptr_t ctx) {
+timeline_thread_func (void *ctx) {
     printf ("timeline thread started\n");
     timeline_t *tl = (timeline_t *)ctx;
 
@@ -113,7 +113,7 @@ timeline_start (timeline_t *tl) {
     tl->stop = 0;
     tl->destroy = 0;
     if (!tl->tid) {
-        tl->tid = thread_start (timeline_thread_func, (uintptr_t)tl);
+        tl->tid = thread_start (timeline_thread_func, tl);
     }
     else {
         printf ("reusing existing thread\n");

@@ -1,6 +1,6 @@
 /*
     DeaDBeeF - ultimate music player for GNU/Linux systems with X11
-    Copyright (C) 2009  Alexey Yakovenko
+    Copyright (C) 2009-2010 Alexey Yakovenko <waker@users.sourceforge.net>
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -23,26 +23,75 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)>(y)?(x):(y))
 
-#define trace(...) { fprintf(stderr, __VA_ARGS__); }
-//#define trace(fmt,...)
+//#define trace(...) { fprintf(stderr, __VA_ARGS__); }
+#define trace(fmt,...)
 
 static DB_decoder_t plugin;
 static DB_functions_t *deadbeef;
 
 typedef struct {
     SNDFILE *ctx;
+    DB_FILE *file;
     int startsample;
     int endsample;
     int currentsample;
+    int bitrate;
 } sndfilectx_t;
 
 static sndfilectx_t sfctx;
+
+
+// vfs wrapper for sf
+static sf_count_t
+sf_vfs_get_filelen (void *user_data) {
+    sndfilectx_t *ctx = user_data;
+    return deadbeef->fgetlength (ctx->file);
+}
+
+static sf_count_t
+sf_vfs_read (void *ptr, sf_count_t count, void *user_data) {
+    sndfilectx_t *ctx = user_data;
+    return deadbeef->fread (ptr, 1, count, ctx->file);
+}
+
+static sf_count_t
+sf_vfs_write (const void *ptr, sf_count_t count, void *user_data) {
+    return -1;
+}
+
+static sf_count_t
+sf_vfs_seek (sf_count_t offset, int whence, void *user_data) {
+    sndfilectx_t *ctx = user_data;
+    return deadbeef->fseek (ctx->file, offset, whence);
+}
+
+static sf_count_t
+sf_vfs_tell (void *user_data) {
+    sndfilectx_t *ctx = user_data;
+    return deadbeef->ftell (ctx->file);
+}
+
+static SF_VIRTUAL_IO vfs = {
+    .get_filelen = sf_vfs_get_filelen,
+    .seek = sf_vfs_seek,
+    .read = sf_vfs_read,
+    .write = sf_vfs_write,
+    .tell = sf_vfs_tell
+};
 
 static int
 sndfile_init (DB_playItem_t *it) {
     memset (&sfctx, 0, sizeof (sfctx));
     SF_INFO inf;
-    sfctx.ctx = sf_open (it->fname, SFM_READ, &inf);
+    DB_FILE *fp = deadbeef->fopen (it->fname);
+    if (!fp) {
+        trace ("sndfile: failed to open %s\n", it->fname);
+        return -1;
+    }
+    int fsize = deadbeef->fgetlength (fp);
+
+    sfctx.file = fp;
+    sfctx.ctx = sf_open_virtual (&vfs, SFM_READ, &inf, &sfctx);
     if (!sfctx.ctx) {
         return -1;
     }
@@ -62,6 +111,15 @@ sndfile_init (DB_playItem_t *it) {
         sfctx.startsample = 0;
         sfctx.endsample = inf.frames-1;
     }
+    // hack bitrate
+    float sec = (float)(sfctx.endsample-sfctx.startsample) / inf.samplerate;
+    if (sec > 0) {
+        sfctx.bitrate = fsize / sec * 8 / 1000;
+    }
+    else {
+        sfctx.bitrate = -1;
+    }
+
     return 0;
 }
 
@@ -69,6 +127,9 @@ static void
 sndfile_free (void) {
     if (sfctx.ctx) {
         sf_close (sfctx.ctx);
+    }
+    if (sfctx.file) {
+        deadbeef->fclose (sfctx.file);
     }
     memset (&sfctx, 0, sizeof (sfctx));
 }
@@ -86,6 +147,9 @@ sndfile_read_int16 (char *bytes, int size) {
     sfctx.currentsample += n;
     size = n * 2 * plugin.info.channels;
     plugin.info.readpos = (float)(sfctx.currentsample-sfctx.startsample)/plugin.info.samplerate;
+    if (sfctx.bitrate > 0) {
+        deadbeef->streamer_set_bitrate (sfctx.bitrate);
+    }
     return size;
 }
 
@@ -102,6 +166,9 @@ sndfile_read_float32 (char *bytes, int size) {
     sfctx.currentsample += n;
     size = n * 4 * plugin.info.channels;
     plugin.info.readpos = (float)(sfctx.currentsample-sfctx.startsample)/plugin.info.samplerate;
+    if (sfctx.bitrate > 0) {
+        deadbeef->streamer_set_bitrate (sfctx.bitrate);
+    }
     return size;
 }
 
@@ -120,20 +187,23 @@ sndfile_seek (float sec) {
 static DB_playItem_t *
 sndfile_insert (DB_playItem_t *after, const char *fname) {
     SF_INFO inf;
-    SNDFILE *sf = sf_open (fname, SFM_READ, &inf);
-    if (!sf) {
+    sndfilectx_t sfctx;
+    sfctx.file = deadbeef->fopen (fname);
+    if (!sfctx.file) {
+        trace ("sndfile: failed to open %s\n", fname);
+        return NULL;
+    }
+    sfctx.ctx = sf_open_virtual (&vfs, SFM_READ, &inf, &sfctx);
+    if (!sfctx.ctx) {
         trace ("sndfile: sf_open failed");
         return NULL;
     }
     int totalsamples = inf.frames;
     int samplerate = inf.samplerate;
-    sf_close (sf);
-    float duration = (float)totalsamples / samplerate;
-    DB_playItem_t *cue_after = deadbeef->pl_insert_cue (after, fname, &plugin, "sndfile", totalsamples, samplerate);
-    if (cue_after) {
-        return cue_after;
-    }
+    sf_close (sfctx.ctx);
+    deadbeef->fclose (sfctx.file);
 
+    float duration = (float)totalsamples / samplerate;
     DB_playItem_t *it = deadbeef->pl_item_alloc ();
     it->decoder = &plugin;
     it->fname = strdup (fname);
@@ -141,6 +211,11 @@ sndfile_insert (DB_playItem_t *after, const char *fname) {
     deadbeef->pl_set_item_duration (it, duration);
 
     trace ("sndfile: totalsamples=%d, samplerate=%d, duration=%f\n", totalsamples, samplerate, duration);
+
+    DB_playItem_t *cue_after = deadbeef->pl_insert_cue (after, it, totalsamples, samplerate);
+    if (cue_after) {
+        return cue_after;
+    }
 
     deadbeef->pl_add_meta (it, "title", NULL);
     after = deadbeef->pl_insert_item (after, it);

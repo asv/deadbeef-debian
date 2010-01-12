@@ -1,6 +1,6 @@
 /*
     DeaDBeeF - ultimate music player for GNU/Linux systems with X11
-    Copyright (C) 2009  Alexey Yakovenko
+    Copyright (C) 2009-2010 Alexey Yakovenko <waker@users.sourceforge.net>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -178,7 +178,7 @@ cmp3_scan_stream (buffer_t *buffer, int sample) {
     for (;;) {
         uint32_t hdr;
         uint8_t sync;
-        size_t pos = deadbeef->ftell (buffer->file);
+        //size_t pos = deadbeef->ftell (buffer->file);
         if (deadbeef->fread (&sync, 1, 1, buffer->file) != 1) {
             break; // eof
         }
@@ -399,11 +399,13 @@ cmp3_scan_stream (buffer_t *buffer, int sample) {
                     deadbeef->fread (&lpf, 1, 1, buffer->file);
                     //3 floats: replay gain
                     deadbeef->fread (buf, 1, 4, buffer->file);
-                    float rg_peaksignalamp = extract_f32 (buf);
+                    // float rg_peaksignalamp = extract_f32 (buf);
                     deadbeef->fread (buf, 1, 2, buffer->file);
-                    uint16_t rg_radio = extract_i16 (buf);
+                    // uint16_t rg_radio = extract_i16 (buf);
+
                     deadbeef->fread (buf, 1, 2, buffer->file);
-                    uint16_t rg_audiophile = extract_i16 (buf);
+                    // uint16_t rg_audiophile = extract_i16 (buf);
+
                     // skip
                     deadbeef->fseek (buffer->file, 2, SEEK_CUR);
                     deadbeef->fread (buf, 1, 3, buffer->file);
@@ -418,7 +420,8 @@ cmp3_scan_stream (buffer_t *buffer, int sample) {
                     deadbeef->fseek (buffer->file, 2, SEEK_CUR);
                     // musiclen
                     deadbeef->fread (buf, 1, 4, buffer->file);
-                    uint32_t musiclen = extract_i32 (buf);
+//                    uint32_t musiclen = extract_i32 (buf);
+
                     trace ("lpf: %d, peaksignalamp: %f, radiogain: %d, audiophile: %d, startdelay: %d, enddelay: %d, mp3gain: %d, musiclen: %d\n", lpf, rg_peaksignalamp, rg_radio, rg_audiophile, startdelay, enddelay, mp3gain, musiclen);
                     // skip crc
                     //deadbeef->fseek (buffer->file, 4, SEEK_CUR);
@@ -513,7 +516,7 @@ cmp3_scan_stream (buffer_t *buffer, int sample) {
 static int
 cmp3_init (DB_playItem_t *it) {
     memset (&buffer, 0, sizeof (buffer));
-    buffer.file = plugin.info.file = deadbeef->fopen (it->fname);
+    buffer.file = deadbeef->fopen (it->fname);
     if (!buffer.file) {
         return -1;
     }
@@ -657,11 +660,12 @@ static int
 cmp3_decode_cut (int framesize) {
     if (buffer.duration >= 0) {
         if (buffer.currentsample + buffer.readsize / (framesize * buffer.channels) > buffer.endsample) {
-            buffer.readsize = (buffer.endsample - buffer.currentsample + 1) * framesize * buffer.channels;
+            int sz = (buffer.endsample - buffer.currentsample + 1) * framesize * buffer.channels;
             trace ("size truncated to %d bytes, cursample=%d, endsample=%d, totalsamples=%d\n", buffer.readsize, buffer.currentsample, buffer.endsample, buffer.totalsamples);
-            if (buffer.readsize <= 0) {
+            if (sz <= 0) {
                 return 1;
             }
+            buffer.readsize = sz;
         }
     }
     return 0;
@@ -731,7 +735,7 @@ cmp3_stream_frame (void) {
             }
             int size = READBUFFER - buffer.remaining;
             int bytesread = 0;
-            char *bytes = buffer.input + buffer.remaining;
+            uint8_t *bytes = buffer.input + buffer.remaining;
             bytesread = deadbeef->fread (bytes, 1, size, buffer.file);
             if (!bytesread) {
                 // add guard
@@ -791,7 +795,7 @@ cmp3_stream_frame (void) {
         // synthesize single frame
         mad_synth_frame(&synth,&frame);
         buffer.decode_remaining = synth.pcm.length;
-        deadbeef->playback_update_bitrate (frame.header.bitrate/1000);
+        deadbeef->streamer_set_bitrate (frame.header.bitrate/1000);
         break;
     }
     return eof;
@@ -818,6 +822,7 @@ cmp3_decode_int16 (void) {
 static int
 cmp3_decode_float32 (void) {
     if (cmp3_decode_cut (8)) {
+        trace ("read request ignored (end of track passed)\n");
         return 0;
     }
     int eof = 0;
@@ -835,7 +840,6 @@ cmp3_decode_float32 (void) {
 
 static void
 cmp3_free (void) {
-    plugin.info.file = NULL;
     if (buffer.file) {
         deadbeef->fclose (buffer.file);
         buffer.file = NULL;
@@ -850,6 +854,8 @@ cmp3_read_int16 (char *bytes, int size) {
     buffer.readsize = size;
     buffer.out = bytes;
     cmp3_decode_int16 ();
+    buffer.currentsample += (size - buffer.readsize) / 4;
+    plugin.info.readpos = (float)(buffer.currentsample - buffer.startsample) / buffer.samplerate;
     return size - buffer.readsize;
 }
 
@@ -858,6 +864,8 @@ cmp3_read_float32 (char *bytes, int size) {
     buffer.readsize = size;
     buffer.out = bytes;
     cmp3_decode_float32 ();
+    buffer.currentsample += (size - buffer.readsize) / 8;
+    plugin.info.readpos = (float)(buffer.currentsample - buffer.startsample) / buffer.samplerate;
     return size - buffer.readsize;
 }
 
@@ -971,7 +979,7 @@ cmp3_insert (DB_playItem_t *after, const char *fname) {
         return NULL;
     }
 
-    const char *ftype;
+    const char *ftype = NULL;
     if (buffer.version == 1) {
         switch (buffer.layer) {
         case 1:
@@ -1011,26 +1019,25 @@ cmp3_insert (DB_playItem_t *after, const char *fname) {
             break;
         }
     }
-    // FIXME! bad numsamples passed to cue
-    DB_playItem_t *cue_after = deadbeef->pl_insert_cue (after, fname, &plugin, ftype, buffer.duration*buffer.samplerate, buffer.samplerate);
-    if (cue_after) {
-        deadbeef->fclose (fp);
-        return cue_after;
-    }
-
-    deadbeef->rewind (fp);
-
     DB_playItem_t *it = deadbeef->pl_item_alloc ();
     it->decoder = &plugin;
     it->fname = strdup (fname);
 
-    int apeerr = deadbeef->junk_read_ape (it, fp);
-    int v2err = deadbeef->junk_read_id3v2 (it, fp);
-    int v1err = deadbeef->junk_read_id3v1 (it, fp);
-    deadbeef->fclose (fp);
+    deadbeef->rewind (fp);
+    /*int apeerr = */deadbeef->junk_read_ape (it, fp);
+    /*int v2err = */deadbeef->junk_read_id3v2 (it, fp);
+    /*int v1err = */deadbeef->junk_read_id3v1 (it, fp);
     deadbeef->pl_add_meta (it, "title", NULL);
     deadbeef->pl_set_item_duration (it, buffer.duration);
     it->filetype = ftype;
+    deadbeef->fclose (fp);
+
+    // FIXME! bad numsamples passed to cue
+    DB_playItem_t *cue_after = deadbeef->pl_insert_cue (after, it, buffer.duration*buffer.samplerate, buffer.samplerate);
+    if (cue_after) {
+        deadbeef->pl_item_free (it);
+        return cue_after;
+    }
 
     after = deadbeef->pl_insert_item (after, it);
     return after;

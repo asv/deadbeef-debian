@@ -1,14 +1,27 @@
 help file for deadbeef player
 
+USEFUL HOTKEYS
+
+you can navigate playlist with arrow keys
+page up, page down, home, end also work
+use shift key to select multiple tracks
+playback is controlled winamp-style:
+z, x, c, v, b, n keys function as
+previous, play, pause, stop, next, random
+also notice hotkey hints in the menus
+it is not (yet?) possible to remap keys
+also see GLOBAL HOTKEYS section below
+
 CONFIGURATION
 
-currently GUI configuration is incomplete, so editing configuration file is a necessity.
 since 0.3.0 release, all configuration is stored in single file:
 $HOME/.config/deadbeef/config
 
-generally, you should run player once, then exit it (to generate config), then edit it by hand.
+most stuff can be configured through edit->preferences dialog
 
-HOTKEYS PLUGIN CONFIGURATION
+GLOBAL HOTKEYS
+
+it's not yet in GUI configuration window, so here we go..
 
 syntax is following:
 
@@ -27,18 +40,5 @@ hotkeys.key8 XF86AudioLowerVolume: volume_down
 
 full list of actions:
 
-toggle_pause, play, prev, next, stop, play_random, seek_fwd, seek_back, volume_up, volume_down
+toggle_pause, play, prev, next, stop, play_random, seek_fwd, seek_back, volume_up, volume_down, toggle_stop_after_current
 
-LAST.FM PLUGIN CONFIGURATION
-
-lastfm.login <LOGIN>
-lastfm.password <PASSWORD>
-
-you can see if it works by looking at lastfm profile page after you start playing music (it should say something like "now playing with DeaDBeeF")
-
-also note, that it's subject to last.fm policy to submit songs under certain rules.
-songs without at least Artist and Title tags will not be submitted.
-
-COLUMNS CONFIGURATION
-
-<TODO: write this>

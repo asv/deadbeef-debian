@@ -1,6 +1,6 @@
 /*
     DeaDBeeF - ultimate music player for GNU/Linux systems with X11
-    Copyright (C) 2009  Alexey Yakovenko
+    Copyright (C) 2009-2010 Alexey Yakovenko <waker@users.sourceforge.net>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -100,7 +100,7 @@ cdumb_init (DB_playItem_t *it) {
 
     plugin.info.bps = 16;
     plugin.info.channels = 2;
-    plugin.info.samplerate = deadbeef->playback_get_samplerate ();
+    plugin.info.samplerate = deadbeef->get_output ()->samplerate ();
     plugin.info.readpos = 0;
 
     if (cdumb_startrenderer () < 0) {
@@ -193,7 +193,7 @@ static DUH * open_module(const char *fname, const char *ext, int *start_order, i
 	*is_it = 0;
 	*is_dos = 1;
 
-    char ptr[2000];
+    uint8_t ptr[2000];
     DB_FILE *fp = deadbeef->fopen (fname);
     if (!fp) {
         return NULL;
@@ -722,6 +722,7 @@ static const char *convstr (const char* str, int sz) {
     }
 
     const char *enc = "iso8859-1";
+#if 0
     int latin = 0;
     int rus = 0;
     for (int i = 0; i < sz; i++) {
@@ -737,6 +738,7 @@ static const char *convstr (const char* str, int sz) {
         // might be russian
         enc = "cp1251";
     }
+#endif
     cd = iconv_open ("utf8", enc);
     if (!cd) {
         // printf ("unknown encoding: %s\n", enc);
@@ -748,7 +750,7 @@ static const char *convstr (const char* str, int sz) {
         char *pin = (char*)str;
         char *pout = out;
         memset (out, 0, sizeof (out));
-        size_t res = iconv (cd, &pin, &inbytesleft, &pout, &outbytesleft);
+        /*size_t res = */iconv (cd, &pin, &inbytesleft, &pout, &outbytesleft);
         iconv_close (cd);
     }
     return out;
@@ -775,7 +777,15 @@ cdumb_insert (DB_playItem_t *after, const char *fname) {
     it->fname = strdup (fname);
     DUMB_IT_SIGDATA * itsd = duh_get_it_sigdata(duh);
     if (itsd->name[0])     {
-        deadbeef->pl_add_meta (it, "title", convstr ((char*)&itsd->name, sizeof(itsd->name)));
+        int tl = sizeof(itsd->name);
+        int i;
+        for (i = 0; i < tl && itsd->name[i] && itsd->name[i] == ' '; i++);
+        if (i == tl || !itsd->name[i]) {
+            deadbeef->pl_add_meta (it, "title", NULL);
+        }
+        else {
+            deadbeef->pl_add_meta (it, "title", convstr ((char*)&itsd->name, sizeof(itsd->name)));
+        }
     }
     else {
         deadbeef->pl_add_meta (it, "title", NULL);

@@ -1,6 +1,6 @@
 /*
     DeaDBeeF - ultimate music player for GNU/Linux systems with X11
-    Copyright (C) 2009  Alexey Yakovenko
+    Copyright (C) 2009-2010 Alexey Yakovenko <waker@users.sourceforge.net>
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -57,6 +57,8 @@ typedef struct {
     char *content_name;
     char *content_genre;
     uint8_t status;
+//    int icy_metaint;
+//    int wait_meta;
     // flags (bitfields to save some space)
     unsigned seektoend : 1; // indicates that next tell must return length
     unsigned gotheader : 1; // tells that all headers (including ICY) were processed (to start reading body)
@@ -67,6 +69,9 @@ typedef struct {
 static DB_vfs_t plugin;
 
 static char http_err[CURL_ERROR_SIZE];
+
+static int vfs_curl_abort;
+static int vfs_curl_count;
 
 static size_t
 http_content_header_handler (void *ptr, size_t size, size_t nmemb, void *stream);
@@ -126,6 +131,9 @@ http_curl_write (void *ptr, size_t size, size_t nmemb, void *stream) {
     }
     deadbeef->mutex_unlock (fp->mutex);
     while (avail > 0) {
+        if (vfs_curl_abort) {
+            break;
+        }
         deadbeef->mutex_lock (fp->mutex);
         if (fp->status == STATUS_SEEK) {
             trace ("vfs_curl seek request, aborting current request\n");
@@ -137,10 +145,30 @@ http_curl_write (void *ptr, size_t size, size_t nmemb, void *stream) {
             deadbeef->mutex_unlock (fp->mutex);
             break;
         }
+#if 0
+        if (fp->wait_meta == 0) {
+            char sz;
+            memcpy (&sz, ptr, 1);
+            printf ("reading %d bytes of metadata, seekpos:%d!\n", (int)sz*4, fp->pos);
+            ptr += 16 * sz;
+            avail -= 16 * sz + 1;
+            printf ("avail=%d!\n", avail);
+            fp->wait_meta = fp->icy_metaint;
+        }
+#endif
         int sz = BUFFER_SIZE/2 - fp->remaining; // number of bytes free in buffer
                                                 // don't allow to fill more than half -- used for seeking backwards
+
         if (sz > 5000) { // wait until there are at least 5k bytes free
             int cp = min (avail, sz);
+#if 0
+            if (fp->wait_meta - cp <= 0) {
+                printf ("cp=%d->%d\n", cp, fp->wait_meta);
+                cp = fp->wait_meta;
+            }
+            fp->wait_meta -= cp;
+#endif
+
             int writepos = (fp->pos + fp->remaining) & BUFFER_MASK;
             // copy 1st portion (before end of buffer
             int part1 = BUFFER_SIZE - writepos;
@@ -167,26 +195,6 @@ http_curl_write (void *ptr, size_t size, size_t nmemb, void *stream) {
 //    trace ("returning %d\n", nmemb * size - avail);
     return nmemb * size - avail;
 }
-
-#if 0
-static size_t
-http_size_header_handler (void *ptr, size_t size, size_t nmemb, void *stream) {
-    assert (stream);
-    HTTP_FILE *fp = (HTTP_FILE *)stream;
-    // don't copy/allocate mem, just grep for "Content-Length: "
-    const char *cl = strcasestr (ptr, "Content-Length:");
-    if (cl) {
-        cl += 15;
-        while (*cl <= 0x20) {
-            cl++;
-        }
-        fp->length = atoi (cl);
-        trace ("vfs_curl: file size is %d bytes\n", fp->length);
-        return 0;
-    }
-    return size * nmemb;
-}
-#endif
 
 static const uint8_t *
 parse_header (const uint8_t *p, const uint8_t *e, uint8_t *key, int keysize, uint8_t *value, int valuesize) {
@@ -251,9 +259,6 @@ http_content_header_handler (void *ptr, size_t size, size_t nmemb, void *stream)
     trace ("http_content_header_handler\n");
     assert (stream);
     HTTP_FILE *fp = (HTTP_FILE *)stream;
-    const uint8_t c_type_str[] ="Content-Type:"; 
-    const uint8_t icy_name_str[] ="icy-name:"; 
-    const uint8_t icy_genre_str[] ="icy-genre:"; 
     const uint8_t *p = ptr;
     const uint8_t *end = p + size*nmemb;
     uint8_t key[256];
@@ -282,6 +287,11 @@ http_content_header_handler (void *ptr, size_t size, size_t nmemb, void *stream)
             }
             fp->content_genre = strdup (value);
         }
+//        else if (!strcasecmp (key, "icy-metaint")) {
+//            //printf ("icy-metaint: %d\n", atoi (value));
+//            fp->icy_metaint = atoi (value);
+//            fp->wait_meta = fp->icy_metaint; 
+//        }
     }
     if (!fp->icyheader) {
         fp->gotsomeheader = 1;
@@ -289,25 +299,24 @@ http_content_header_handler (void *ptr, size_t size, size_t nmemb, void *stream)
     return size * nmemb;
 }
 
-static size_t
-http_curl_write_abort (void *ptr, size_t size, size_t nmemb, void *stream) {
-    return 0;
-}
-
 static int
 http_curl_control (void *stream, double dltotal, double dlnow, double ultotal, double ulnow) {
-//    trace ("http_curl_control\n");
-    assert (stream);
     HTTP_FILE *fp = (HTTP_FILE *)stream;
+    trace ("http_curl_control, status = %d\n", fp ? fp->status : -1);
+    assert (stream);
     if (fp->status == STATUS_ABORTED) {
         trace ("vfs_curl STATUS_ABORTED in progress callback\n");
+        return -1;
+    }
+    if (vfs_curl_abort) {
+        trace ("vfs_curl: aborting stream %p due to external request\n");
         return -1;
     }
     return 0;
 }
 
 static void
-http_thread_func (uintptr_t ctx) {
+http_thread_func (void *ctx) {
     HTTP_FILE *fp = (HTTP_FILE *)ctx;
     CURL *curl;
     curl = curl_easy_init ();
@@ -315,29 +324,10 @@ http_thread_func (uintptr_t ctx) {
     fp->status = STATUS_INITIAL;
 
     int status;
-#if 0
-    // get filesize (once)
-    curl_easy_setopt (curl, CURLOPT_URL, fp->url);
-    curl_easy_setopt (curl, CURLOPT_NOBODY, 0);
-    curl_easy_setopt (curl, CURLOPT_FOLLOWLOCATION, 1);
-    curl_easy_setopt (curl, CURLOPT_MAXREDIRS, 10);
-    curl_easy_setopt (curl, CURLOPT_HEADERFUNCTION, http_size_header_handler);
-    curl_easy_setopt (curl, CURLOPT_HEADERDATA, ctx);
-    curl_easy_setopt (curl, CURLOPT_WRITEFUNCTION, http_curl_write_abort);
-    curl_easy_setopt (curl, CURLOPT_PROGRESSFUNCTION, http_curl_control);
-    curl_easy_setopt (curl, CURLOPT_FOLLOWLOCATION, 1);
-    curl_easy_setopt (curl, CURLOPT_MAXREDIRS, 10);
-    status = curl_easy_perform(curl);
-#if 0
-    if (status != 0) {
-        trace ("vfs_curl: curl_easy_perform failed while getting filesize, status %d\n", status);
-    }
-#endif
-#endif
-//    fp->status = STATUS_STARTING;
 
     trace ("vfs_curl: started loading data\n");
     for (;;) {
+//        struct curl_slist *headers = NULL;
         curl_easy_reset (curl);
         curl_easy_setopt (curl, CURLOPT_URL, fp->url);
         curl_easy_setopt (curl, CURLOPT_NOPROGRESS, 1);
@@ -354,6 +344,8 @@ http_thread_func (uintptr_t ctx) {
         // enable up to 10 redirects
         curl_easy_setopt (curl, CURLOPT_FOLLOWLOCATION, 1);
         curl_easy_setopt (curl, CURLOPT_MAXREDIRS, 10);
+//        headers = curl_slist_append (headers, "Icy-Metadata:1");
+//        curl_easy_setopt (curl, CURLOPT_HTTPHEADER, headers);
         if (fp->pos > 0) {
             curl_easy_setopt (curl, CURLOPT_RESUME_FROM, fp->pos);
         }
@@ -388,7 +380,9 @@ http_thread_func (uintptr_t ctx) {
 #endif
             curl_easy_setopt (curl, CURLOPT_PROXYTYPE, curlproxytype);
         }
+        vfs_curl_count++;
         status = curl_easy_perform (curl);
+        vfs_curl_count--;
         trace ("vfs_curl: curl_easy_perform status=%d\n", status);
         if (status != 0) {
             trace ("curl error:\n%s\n", http_err);
@@ -401,6 +395,7 @@ http_thread_func (uintptr_t ctx) {
         fp->status = STATUS_INITIAL;
         trace ("seeking to %d\n", fp->pos);
         deadbeef->mutex_unlock (fp->mutex);
+//        curl_slist_free_all (headers);
     }
     curl_easy_cleanup (curl);
 
@@ -413,7 +408,7 @@ http_thread_func (uintptr_t ctx) {
 static void
 http_start_streamer (HTTP_FILE *fp) {
     fp->mutex = deadbeef->mutex_create ();
-    fp->tid = deadbeef->thread_start (http_thread_func, (uintptr_t)fp);
+    fp->tid = deadbeef->thread_start (http_thread_func, fp);
 }
 
 static DB_FILE *
@@ -469,7 +464,8 @@ http_read (void *ptr, size_t size, size_t nmemb, DB_FILE *stream) {
     while (fp->status != STATUS_FINISHED && sz > 0)
     {
         // wait until data is available
-        while ((fp->remaining == 0 || fp->skipbytes > 0) && fp->status != STATUS_FINISHED) {
+        while ((fp->remaining == 0 || fp->skipbytes > 0) && fp->status != STATUS_FINISHED && !vfs_curl_abort) {
+            trace ("vfs_curl: readwait..\n");
             deadbeef->mutex_lock (fp->mutex);
             int skip = min (fp->remaining, fp->skipbytes);
             if (skip > 0) {
@@ -623,7 +619,7 @@ http_get_content_type (DB_FILE *stream) {
         http_start_streamer (fp);
     }
     trace ("http_get_content_type waiting for response...\n");
-    while (fp->status != STATUS_FINISHED && fp->status != STATUS_ABORTED && !fp->gotheader) {
+    while (fp->status != STATUS_FINISHED && fp->status != STATUS_ABORTED && !fp->gotheader && !vfs_curl_abort) {
         usleep (3000);
     }
     return fp->content_type;
@@ -644,7 +640,7 @@ http_get_content_name (DB_FILE *stream) {
         http_start_streamer (fp);
     }
     trace ("http_get_content_name waiting for response...\n");
-    while (fp->status != STATUS_FINISHED && fp->status != STATUS_ABORTED && !fp->gotheader) {
+    while (fp->status != STATUS_FINISHED && fp->status != STATUS_ABORTED && !fp->gotheader && !vfs_curl_abort) {
         usleep (3000);
     }
     return fp->content_name;
@@ -665,18 +661,38 @@ http_get_content_genre (DB_FILE *stream) {
         http_start_streamer (fp);
     }
     trace ("http_get_content_genre waiting for response...\n");
-    while (fp->status != STATUS_FINISHED && fp->status != STATUS_ABORTED && !fp->gotheader) {
+    while (fp->status != STATUS_FINISHED && fp->status != STATUS_ABORTED && !fp->gotheader && !vfs_curl_abort) {
         usleep (3000);
     }
     return fp->content_genre;
 }
 
-static void
-http_stop (DB_FILE *stream) {
-    trace ("http_stop\n");
-    assert (stream);
-    HTTP_FILE *fp = (HTTP_FILE *)stream;
-    fp->status = STATUS_ABORTED;
+static int
+vfs_curl_on_abort (DB_event_t *ev, uintptr_t data) {
+    trace ("vfs_curl: got abort signal (vfs_curl_count=%d)!\n", vfs_curl_count);
+    if (vfs_curl_count > 0) {
+        vfs_curl_abort = 1;
+        while (vfs_curl_count > 0) {
+            trace ("vfs_curl: (vfs_curl_count=%d)!\n", vfs_curl_count);
+            usleep (20000);
+        }
+        vfs_curl_abort = 0;
+    }
+    trace ("vfs_curl: abort handler done!\n");
+    return 0;
+}
+
+static int
+vfs_curl_start (void) {
+    deadbeef->ev_subscribe (DB_PLUGIN (&plugin), DB_EV_ABORTREAD, DB_CALLBACK (vfs_curl_on_abort), 0);
+    return 0;
+}
+
+static int
+vfs_curl_stop (void) {
+    deadbeef->ev_unsubscribe (DB_PLUGIN (&plugin), DB_EV_ABORTREAD, DB_CALLBACK (vfs_curl_on_abort), 0);
+    vfs_curl_on_abort (NULL, 0);
+    return 0;
 }
 
 static const char *scheme_names[] = { "http://", "ftp://", NULL };
@@ -692,6 +708,8 @@ static DB_vfs_t plugin = {
     .plugin.author = "Alexey Yakovenko",
     .plugin.email = "waker@users.sourceforge.net",
     .plugin.website = "http://deadbeef.sf.net",
+    .plugin.start = vfs_curl_start,
+    .plugin.stop = vfs_curl_stop,
     .open = http_open,
     .close = http_close,
     .read = http_read,
@@ -701,8 +719,7 @@ static DB_vfs_t plugin = {
     .getlength = http_getlength,
     .get_content_type = http_get_content_type,
     .get_content_name = http_get_content_name,
-    .get_content_genre = http_get_content_type,
-    .stop = http_stop,
+    .get_content_genre = http_get_content_genre,
     .scheme_names = scheme_names,
     .streaming = 1
 };

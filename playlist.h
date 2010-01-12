@@ -1,6 +1,6 @@
 /*
     DeaDBeeF - ultimate music player for GNU/Linux systems with X11
-    Copyright (C) 2009  Alexey Yakovenko
+    Copyright (C) 2009-2010 Alexey Yakovenko <waker@users.sourceforge.net>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,8 +28,6 @@ typedef struct metaInfo_s {
 } metaInfo_t;
 
 #define PL_MAX_ITERATORS 2
-#define PL_MAIN 0
-#define PL_SEARCH 1
 
 typedef struct playItem_s {
     char *fname; // full pathname
@@ -57,10 +55,8 @@ typedef struct playItem_s {
 
 extern playItem_t *playlist_head[PL_MAX_ITERATORS]; // head of linked list
 extern playItem_t *playlist_tail[PL_MAX_ITERATORS]; // tail of linked list
+extern int playlist_current_row[PL_MAX_ITERATORS]; // current row (cursor)
 extern playItem_t *playlist_current_ptr; // pointer to a real current playlist item (or NULL)
-
-extern int pl_count;
-extern float pl_totaltime;
 
 int
 pl_add_dir (const char *dirname, int (*cb)(playItem_t *it, void *data), void *user_data);
@@ -78,9 +74,6 @@ playItem_t *
 pl_insert_item (playItem_t *after, playItem_t *it);
 
 int
-pl_append_item (playItem_t *it);
-
-int
 pl_remove (playItem_t *i);
 
 playItem_t *
@@ -96,7 +89,7 @@ void
 pl_free (void);
 
 int
-pl_getcount (void);
+pl_getcount (int iter);
 
 int
 pl_getselcount (void);
@@ -104,14 +97,17 @@ pl_getselcount (void);
 playItem_t *
 pl_get_for_idx (int idx);
 
+playItem_t *
+pl_get_for_idx_and_iter (int idx, int iter);
+
 int
 pl_get_idx_of (playItem_t *it);
 
 playItem_t *
-pl_insert_cue_from_buffer (playItem_t *after, const char *fname, const uint8_t *buffer, int buffersize, struct DB_decoder_s *decoder, const char *ftype, int numsamples, int samplerate);
+pl_insert_cue_from_buffer (playItem_t *after, playItem_t *origin, const uint8_t *buffer, int buffersize, int numsamples, int samplerate);
 
 playItem_t *
-pl_insert_cue (playItem_t *after, const char *cuename, struct DB_decoder_s *decoder, const char *ftype, int numsamples, int samplerate);
+pl_insert_cue (playItem_t *after, playItem_t *origin, int numsamples, int samplerate);
 
 //int
 //pl_set_current (playItem_t *it);
@@ -168,6 +164,70 @@ pl_get_item_duration (playItem_t *it);
 // returns number of characters printed, not including trailing 0
 // [a]rtist, [t]itle, al[b]um, [l]ength, track[n]umber
 int
-pl_format_title (playItem_t *it, char *s, int size, const char *fmt);
+pl_format_title (playItem_t *it, char *s, int size, int id, const char *fmt);
+
+void
+pl_reset_cursor (void);
+
+float
+pl_get_totaltime (void);
+
+playItem_t *
+pl_getcurrent (void);
+
+void
+pl_set_selected (playItem_t *it, int sel);
+
+int
+pl_is_selected (playItem_t *it);
+
+playItem_t *
+pl_get_first (int iter);
+
+playItem_t *
+pl_get_last (int iter);
+
+playItem_t *
+pl_get_next (playItem_t *it, int iter);
+
+playItem_t *
+pl_get_prev (playItem_t *it, int iter);
+
+int
+pl_get_cursor (int iter);
+
+void
+pl_set_cursor (int iter, int cursor);
+
+void
+pl_move_items (int iter, playItem_t *drop_before, uint32_t *indexes, int count);
+
+void
+pl_search_reset (void);
+
+void
+pl_search_process (const char *text);
+
+void
+pl_sort (int iter, int id, const char *format, int ascending);
+
+// playqueue support functions
+int
+pl_playqueue_push (playItem_t *it);
+
+void
+pl_playqueue_clear (void);
+
+void
+pl_playqueue_pop (void);
+
+void
+pl_playqueue_remove (playItem_t *it);
+
+int
+pl_playqueue_test (playItem_t *it);
+
+playItem_t *
+pl_playqueue_getnext (void);
 
 #endif // __PLAYLIST_H

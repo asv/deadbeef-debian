@@ -1,6 +1,6 @@
 /*
     DeaDBeeF - ultimate music player for GNU/Linux systems with X11
-    Copyright (C) 2009  Alexey Yakovenko
+    Copyright (C) 2009-2010 Alexey Yakovenko <waker@users.sourceforge.net>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -39,5 +39,8 @@ junk_detect_charset (const char *s);
 
 void
 junk_recode (const char *in, int inlen, char *out, int outlen, const char *cs);
+
+void
+junk_copy (struct playItem_s *from, struct playItem_s *first, struct playItem_s *last);
 
 #endif // __JUNKLIB_H

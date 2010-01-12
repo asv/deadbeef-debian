@@ -1,6 +1,6 @@
 /*
     DeaDBeeF - ultimate music player for GNU/Linux systems with X11
-    Copyright (C) 2009  Alexey Yakovenko
+    Copyright (C) 2009-2010 Alexey Yakovenko <waker@users.sourceforge.net>
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -21,8 +21,8 @@
 #include "vfs.h"
 #include "plugins.h"
 
-#define trace(...) { fprintf(stderr, __VA_ARGS__); }
-//#define trace(fmt,...)
+//#define trace(...) { fprintf(stderr, __VA_ARGS__); }
+#define trace(fmt,...)
 
 DB_FILE *
 vfs_fopen (const char *fname) {
@@ -98,11 +98,4 @@ vfs_get_content_genre (DB_FILE *stream) {
         return stream->vfs->get_content_genre (stream);
     }
     return NULL;
-}
-
-void
-vfs_fstop (DB_FILE *stream) {
-    if (stream->vfs->stop) {
-        stream->vfs->stop (stream);
-    }
 }
