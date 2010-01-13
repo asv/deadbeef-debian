@@ -16,6 +16,9 @@ Build-Depends: debhelper (>= 7.0.50),
                libsndfile1-dev,
                libvorbis-dev,
                libwavpack-dev,
+               libavformat-dev,
+               libavcodec-dev,
+               libavutil-dev,
                libx11-dev
 Standards-Version: 3.8.3
 Homepage: http://deadbeef.sourceforge.net/
@@ -34,7 +37,8 @@ Package: deadbeef
 Architecture: any
 Depends: ${shlibs:Depends}
 Recommends: libflac8, libvorbis0a, libvorbisfile3, libmad0,
-            libogg0, libwavpack1, libsndfile1, libcddb2, libcdio7
+            libogg0, libwavpack1, libsndfile1, libcddb2, libcdio7,
+            libavformat52, libavcodec52, libavutil49
 Suggests: libcurl3-gnutls
 Description: ultimate music player for GNU/Linux systems
  DeaDBeeF (as in 0xDEADBEEF) is an audio player for GNU/Linux systems with X11.

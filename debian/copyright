@@ -12,7 +12,7 @@ Copyright:
     This package contains various pieces of software copyrighted
     by their respective authors, including:
 
-    Copyright (C) 2009 by Alexey Yakovenko <waker@users.sourceforge.net>
+    Copyright (C) 2009-2010 by Alexey Yakovenko <waker@users.sourceforge.net>
     Copyright (C) by Viktor Semykin <thesame.ml@gmail.com>
     Copyright (C) Stas Akimushkin <uncle.lag@gmail.com>
 
@@ -91,6 +91,19 @@ md5/*: Functions to compute MD5 message digest of files or memory blocks
 sid/sidplay-libs-2.1.0/*: commodore 64 SID emulation library
     Copyright (c) 2000-2004 Simon White <sidplay2@email.com>
     Licensed under GPL license.
+
+plugins/adplug/adplug/*: Replayer for many OPL2/OPL3 audio file formats.
+    Copyright © 1999 - 2006 Simon Peter <dn.tlp@gmx.net>, et al.
+    License under LGPL license.
+
+plugins/adplug/libbinio/*: binary I/O stream class library
+    Copyright (C) 2002-2004 Simon Peter <dn.tlp@gmx.net>
+    License under LGPL license.
+
+plugins/vtx/ay8912.c, plugins/vtx/ayemu.h, plugins/vtx/ayemu_8912.h,
+plugins/vtx/auemu_vtxfile.h: AY/YM sound chip emulator and music file loader
+    Copyright (C) 2003-2004 Sashnov Alexander <sashnov@ngs.ru>
+    License under LGPL license.
 
 The Debian packaging is (C) 2009, Alexey Smirnov <alexey.smirnov@gmx.com> and
 is licensed under the GPL, see above.

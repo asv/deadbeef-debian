@@ -13,5 +13,5 @@ override_dh_makeshlibs:
 	dh_makeshlibs -n
 
 override_dh_shlibdeps:
-	dh_shlibdeps -Xflac.so -Xlastfm.so -Xmpgmad.so \
+	dh_shlibdeps -Xflac.so -Xlastfm.so -Xmpgmad.so -Xffmpeg.so \
 		-Xvorbis.so -Xsndfile.so -Xwavpack.so -Xcdda.so -Xvfs_curl.so
