@@ -26,8 +26,11 @@
 #include <unistd.h>
 #include <assert.h>
 #include <time.h>
+#ifndef __linux__
+#define _POSIX_C_SOURCE
+#endif
+#include <limits.h>
 #include "playlist.h"
-#include "codec.h"
 #include "streamer.h"
 #include "messagepump.h"
 #include "playback.h"
@@ -270,8 +273,8 @@ pl_insert_cue_from_buffer (playItem_t *after, playItem_t *origin, const uint8_t 
             p++;
         }
         if (p-buffer > 2048) { // huge string, ignore
-            buffer = p;
             buffersize -= p-buffer;
+            buffer = p;
             continue;
         }
         char str[p-buffer+1];
@@ -490,90 +493,111 @@ pl_insert_pls (playItem_t *after, const char *fname, int *pabort, int (*cb)(play
     char title[1024] = "";
     char length[20] = "";
     while (p < end) {
+        p = pl_str_skipspaces (p, end);
         if (p >= end) {
             break;
         }
         if (end-p < 6) {
             break;
         }
-        if (strncasecmp (p, "file", 4)) {
-            break;
-        }
-        p += 4;
-        while (p < end && *p != '=') {
+        const uint8_t *e;
+        int n;
+        if (!strncasecmp (p, "file", 4)) {
+            if (url[0]) {
+                // add track
+                playItem_t *it = pl_insert_file (after, url, pabort, cb, user_data);
+                if (it) {
+                    after = it;
+                    pl_set_item_duration (it, atoi (length));
+                    if (title[0]) {
+                        pl_delete_all_meta (it);
+                        pl_add_meta (it, "title", title);
+                    }
+                }
+                if (pabort && *pabort) {
+                    return after;
+                }
+                url[0] = 0;
+                title[0] = 0;
+                length[0] = 0;
+            }
+            p += 4;
+            while (p < end && *p != '=') {
+                p++;
+            }
             p++;
+            if (p >= end) {
+                break;
+            }
+            e = p;
+            while (e < end && *e >= 0x20) {
+                e++;
+            }
+            n = e-p;
+            n = min (n, sizeof (url)-1);
+            memcpy (url, p, n);
+            url[n] = 0;
+            trace ("url: %s\n", url);
+            p = ++e;
         }
-        p++;
-        if (p >= end) {
-            break;
-        }
-        const uint8_t *e = p;
-        while (e < end && *e >= 0x20) {
-            e++;
-        }
-        int n = e-p;
-        n = min (n, sizeof (url)-1);
-        memcpy (url, p, n);
-        url[n] = 0;
-        trace ("url: %s\n", url);
-        p = ++e;
-        p = pl_str_skipspaces (p, end);
-        if (strncasecmp (p, "title", 5)) {
-            break;
-        }
-        p += 5;
-        while (p < end && *p != '=') {
+        else if (!strncasecmp (p, "title", 5)) {
+            p += 5;
+            while (p < end && *p != '=') {
+                p++;
+            }
             p++;
+            if (p >= end) {
+                break;
+            }
+            e = p;
+            while (e < end && *e >= 0x20) {
+                e++;
+            }
+            n = e-p;
+            n = min (n, sizeof (title)-1);
+            memcpy (title, p, n);
+            title[n] = 0;
+            trace ("title: %s\n", title);
+            p = ++e;
         }
-        p++;
-        if (p >= end) {
-            break;
-        }
-        e = p;
-        while (e < end && *e >= 0x20) {
-            e++;
-        }
-        n = e-p;
-        n = min (n, sizeof (title)-1);
-        memcpy (title, p, n);
-        title[n] = 0;
-        trace ("title: %s\n", title);
-        p = ++e;
-        p = pl_str_skipspaces (p, end);
-        if (strncasecmp (p, "length", 6)) {
-            break;
-        }
-        p += 6;
-        // skip =
-        while (p < end && *p != '=') {
+        else if (!strncasecmp (p, "length", 6)) {
+            p += 6;
+            // skip =
+            while (p < end && *p != '=') {
+                p++;
+            }
             p++;
-        }
-        p++;
-        if (p >= end) {
+            if (p >= end) {
+                break;
+            }
+            e = p;
+            while (e < end && *e >= 0x20) {
+                e++;
+            }
+            n = e-p;
+            n = min (n, sizeof (length)-1);
+            memcpy (length, p, n);
             break;
         }
-        e = p;
-        while (e < end && *e >= 0x20) {
-            e++;
-        }
-        n = e-p;
-        n = min (n, sizeof (length)-1);
-        memcpy (length, p, n);
-        // add track
-        playItem_t *it = pl_insert_file (after, url, pabort, cb, user_data);
-        if (it) {
-            after = it;
-            pl_set_item_duration (it, atoi (length));
-            pl_delete_all_meta (it);
-            pl_add_meta (it, "title", title);
-        }
-        if (pabort && *pabort) {
-            return after;
+        else {
+            trace ("invalid entry in pls file: %s\n", p);
+            break;
         }
         while (e < end && *e < 0x20) {
             e++;
         }
         p = e;
+    }
+    if (url[0]) {
+        playItem_t *it = pl_insert_file (after, url, pabort, cb, user_data);
+        if (it) {
+            after = it;
+            pl_set_item_duration (it, atoi (length));
+            if (title[0]) {
+                pl_delete_all_meta (it);
+                pl_add_meta (it, "title", title);
+            }
+        }
     }
     return after;
 }
@@ -610,6 +634,8 @@ pl_insert_file (playItem_t *after, const char *fname, int *pabort, int (*cb)(pla
     if (strncasecmp (fname, "file://", 7)) {
         const char *p = fname;
         int detect_on_access = 1;
+
+        // check if it's URI
         for (; *p; p++) {
             if (!strncmp (p, "://", 3)) {
                 break;
@@ -619,7 +645,18 @@ pl_insert_file (playItem_t *after, const char *fname, int *pabort, int (*cb)(pla
                 break;
             }
         }
+
         if (detect_on_access && *p == ':') {
+            // check for wrong chars like CR/LF, TAB, etc
+            // they are not allowed and might lead to corrupt display in GUI
+            int32_t i = 0;
+            while (fname[i]) {
+                uint32_t c = u8_nextchar (fname, &i);
+                if (c < 0x20) {
+                    return NULL;
+                }
+            }
+            
             playItem_t *it = pl_item_alloc ();
             it->decoder = NULL;
             it->fname = strdup (fname);
@@ -1151,6 +1188,26 @@ pl_add_meta (playItem_t *it, const char *key, const char *value) {
 }
 
 void
+pl_replace_meta (playItem_t *it, const char *key, const char *value) {
+    // check if it's already set
+    metaInfo_t *m = it->meta;
+    while (m) {
+        if (!strcasecmp (key, m->key)) {
+            break;;
+        }
+        m = m->next;
+    }
+    if (m) {
+        free (m->value);
+        m->value = strdup (value);
+        return;
+    }
+    else {
+        pl_add_meta (it, key, value);
+    }
+}
+
+void
 pl_format_item_display_name (playItem_t *it, char *str, int len) {
     const char *artist = pl_find_meta (it, "artist");
     const char *title = pl_find_meta (it, "title");
@@ -1677,9 +1734,10 @@ pl_format_elapsed (const char *ret, char *elapsed, int size) {
 }
 
 int
-pl_format_title (playItem_t *it, char *s, int size, int id, const char *fmt) {
+pl_format_title (playItem_t *it, int idx, char *s, int size, int id, const char *fmt) {
     char dur[50];
     char elp[50];
+    char fno[50];
     const char *artist = NULL;
     const char *album = NULL;
     const char *track = NULL;
@@ -1690,10 +1748,18 @@ pl_format_title (playItem_t *it, char *s, int size, int id, const char *fmt) {
     const char *genre = NULL;
     const char *comment = NULL;
     const char *copyright = NULL;
+    const char *filename = NULL;
 
     if (id != -1) {
         const char *text = NULL;
         switch (id) {
+        case DB_COLUMN_FILENUMBER:
+            if (idx == -1) {
+                idx = pl_get_idx_of (it);
+            }
+            snprintf (fno, sizeof (fno), "%d", idx+1);
+            text = fno;
+            break;
         case DB_COLUMN_PLAYING:
             return pl_format_item_queue (it, s, size);
         case DB_COLUMN_ARTIST_ALBUM:
@@ -1793,6 +1859,16 @@ pl_format_title (playItem_t *it, char *s, int size, int id, const char *fmt) {
                     n--;
                 }
             }
+            else if (*fmt == 'f') {
+                filename = it->fname + strlen (it->fname) - 1;
+                while (filename > it->fname && (*filename) != '/') {
+                    filename--;
+                }
+                if (*filename == '/') {
+                    filename++;
+                }
+                meta = filename;
+            }
             else {
                 *s++ = *fmt;
                 n--;
@@ -1815,6 +1891,9 @@ pl_format_title (playItem_t *it, char *s, int size, int id, const char *fmt) {
 
 void
 pl_sort (int iter, int id, const char *format, int ascending) {
+    if (id == DB_COLUMN_FILENUMBER) {
+        return;
+    }
     int sorted = 0;
     do {
         sorted = 1;
@@ -1824,30 +1903,25 @@ pl_sort (int iter, int id, const char *format, int ascending) {
             if (!next) {
                 break;
             }
-            char title1[1024];
-            char title2[1024];
-            if (id == DB_COLUMN_TRACK) {
+            int cmp;
+            if (id == DB_COLUMN_DURATION) {
+                cmp = ascending ? next->_duration > it->_duration : it->_duration > next->_duration;
+            }
+            else if (id == DB_COLUMN_TRACK) {
                 const char *t;
                 t = pl_find_meta (it, "track");
-                if (!t || !isdigit (*t)) {
-                    strcpy (title1, "-1");
-                }
-                else {
-                    snprintf (title1, sizeof (title1), "%03d", atoi (t));
-                }
+                int a = t ? atoi (t) : -1;
                 t = pl_find_meta (next, "track");
-                if (!t || !isdigit (*t)) {
-                    strcpy (title2, "-1");
-                }
-                else {
-                    snprintf (title2, sizeof (title2), "%03d", atoi (t));
-                }
+                int b = t ? atoi (t) : -1;
+                cmp = ascending ? b > a : a > b;
             }
             else {
-                pl_format_title (it, title1, sizeof (title1), id, format);
-                pl_format_title (next, title2, sizeof (title2), id, format);
+                char title1[1024];
+                char title2[1024];
+                pl_format_title (it, -1, title1, sizeof (title1), id, format);
+                pl_format_title (next, -1, title2, sizeof (title2), id, format);
+                cmp = ascending ? strcmp (title1, title2) < 0 : strcmp (title1, title2) > 0;
             }
-            int cmp = ascending ? strcmp (title1, title2) < 0 : strcmp (title1, title2) > 0;
             if (cmp) {
 //                printf ("%p %p swapping %s and %s\n", it, next, meta1, meta2);
                 sorted = 0;

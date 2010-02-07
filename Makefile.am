@@ -4,11 +4,11 @@ SUBDIRS = gme/Game_Music_Emu-0.5.2\
 		  dumb\
 		  pixmaps\
 		  icons\
-		  plugins/hotkeys\
 		  plugins/ffap\
 		  plugins/nullout\
 		  plugins/vtx\
 		  plugins/adplug\
+		  ${HOTKEYS_DIR}\
 		  ${ALSA_DIR}\
 		  ${LFM_DIR}\
           ${MPGMAD_DIR}\
@@ -19,7 +19,9 @@ SUBDIRS = gme/Game_Music_Emu-0.5.2\
           ${VFS_CURL_DIR}\
           ${CDDA_DIR}\
           ${GTKUI_DIR}\
-          ${FFMPEG_DIR}
+          ${FFMPEG_DIR}\
+          ${OSS_DIR}
+#          ${NOTIFY_DIR}
 
 dumbpath=@top_srcdir@/dumb
 sidpath=@top_srcdir@/sid/sidplay-libs-2.1.0
@@ -32,7 +34,6 @@ deadbeef_SOURCES =\
 	plugins.c plugins.h moduleconf.h\
 	playlist.c playlist.h \
 	streamer.c streamer.h\
-	codec.c codec.h\
 	messagepump.c messagepump.h\
 	conf.c  conf.h\
 	cgme.c cdumb.c csid.cpp\
@@ -49,7 +50,7 @@ deadbeef_SOURCES =\
 sdkdir = $(pkgincludedir)
 sdk_HEADERS = deadbeef.h
 
-deadbeef_LDADD = $(LDADD) $(DEPS_LIBS) gme/Game_Music_Emu-0.5.2/gme/libgme.a sid/sidplay-libs-2.1.0/libsidplay2.a dumb/libdumb.a -lstdc++
+deadbeef_LDADD = $(LDADD) $(DEPS_LIBS) $(ICONV_LIB) gme/Game_Music_Emu-0.5.2/gme/libgme.a sid/sidplay-libs-2.1.0/libsidplay2.a dumb/libdumb.a -lstdc++ -lm
 
 AM_CFLAGS = $(DEPS_CFLAGS) -I$(gmepath) -std=c99
 AM_CPPFLAGS = $(DEPS_CFLAGS) -I$(sidpath)/libsidplay/include -I$(sidpath)/builders/resid-builder/include

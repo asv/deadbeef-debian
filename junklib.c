@@ -16,13 +16,19 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "junklib.h"
-#include <iconv.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#define LIBICONV_PLUG
+#include <iconv.h>
 #include "playlist.h"
 #include "utf8.h"
 #include "plugins.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
+#define UTF8 "utf-8"
 
 //#define trace(...) { fprintf(stderr, __VA_ARGS__); }
 #define trace(fmt,...)
@@ -290,15 +296,19 @@ convstr_id3v2_2to3 (const unsigned char* str, int sz) {
     }
     str++;
     sz--;
-    iconv_t cd = iconv_open ("utf8", enc);
-    if (!cd) {
-        trace ("unknown encoding: %s\n", enc);
-        return NULL;
+    iconv_t cd = iconv_open (UTF8, enc);
+    if (cd == (iconv_t)-1) {
+        trace ("iconv can't recoode from %s to utf8", enc);
+        return strdup ("-");
     }
     else {
         size_t inbytesleft = sz;
         size_t outbytesleft = 2047;
+#ifdef __linux__
         char *pin = (char*)str;
+#else
+        const char *pin = str;
+#endif
         char *pout = out;
         memset (out, 0, sizeof (out));
         /*size_t res = */iconv (cd, &pin, &inbytesleft, &pout, &outbytesleft);
@@ -316,12 +326,7 @@ convstr_id3v2_4 (const unsigned char* str, int sz) {
 
     // hack to add limited cp1251 recoding support
 
-    if (*str == 0) {
-        // iso8859-1
-        trace ("iso8859-1\n");
-        enc = "iso8859-1";
-    }
-    else if (*str == 3) {
+    if (*str == 3) {
         // utf8
         trace ("utf8\n");
         strncpy (out, str+1, 2047);
@@ -337,6 +342,14 @@ convstr_id3v2_4 (const unsigned char* str, int sz) {
         trace ("utf16be\n");
         enc = "UTF-16BE";
     }
+#if 0
+    // NOTE: some dumb taggers put non-iso8859-1 text with enc=0
+    else if (*str == 0) {
+        // iso8859-1
+        trace ("iso8859-1\n");
+        enc = "iso8859-1";
+    }
+#endif
     else {
         if (can_be_russian (&str[1])) {
             enc = "cp1251";
@@ -344,15 +357,19 @@ convstr_id3v2_4 (const unsigned char* str, int sz) {
     }
     str++;
     sz--;
-    iconv_t cd = iconv_open ("utf8", enc);
-    if (!cd) {
-        trace ("unknown encoding: %s\n", enc);
-        return NULL;
+    iconv_t cd = iconv_open (UTF8, enc);
+    if (cd == (iconv_t)-1) {
+        trace ("iconv can't recode from %s to utf8\n", enc);
+        return strdup ("-");
     }
     else {
         size_t inbytesleft = sz;
         size_t outbytesleft = 2047;
+#ifdef __linux__
         char *pin = (char*)str;
+#else
+        const char *pin = str;
+#endif
         char *pout = out;
         memset (out, 0, sizeof (out));
         /*size_t res = */iconv (cd, &pin, &inbytesleft, &pout, &outbytesleft);
@@ -379,10 +396,18 @@ convstr_id3v1 (const char* str, int sz) {
 
     // check for utf8 (hack)
     iconv_t cd;
-    cd = iconv_open ("utf8", "utf8");
+    cd = iconv_open (UTF8, UTF8);
+    if (cd == (iconv_t)-1) {
+        trace ("iconv doesn't support utf8\n");
+        return str;
+    }
     size_t inbytesleft = sz;
     size_t outbytesleft = 2047;
-    char *pin = (char*)str;
+#ifdef __linux__
+        char *pin = (char*)str;
+#else
+        const char *pin = str;
+#endif
     char *pout = out;
     memset (out, 0, sizeof (out));
     size_t res = iconv (cd, &pin, &inbytesleft, &pout, &outbytesleft);
@@ -397,15 +422,19 @@ convstr_id3v1 (const char* str, int sz) {
     if (can_be_russian (str)) {
         enc = "cp1251";
     }
-    cd = iconv_open ("utf8", enc);
-    if (!cd) {
-        // trace ("unknown encoding: %s\n", enc);
-        return NULL;
+    cd = iconv_open (UTF8, enc);
+    if (cd == (iconv_t)-1) {
+        trace ("iconv can't recode from %s to utf8\n", enc);
+        return str;
     }
     else {
         size_t inbytesleft = sz;
         size_t outbytesleft = 2047;
+#ifdef __linux__
         char *pin = (char*)str;
+#else
+        const char *pin = str;
+#endif
         char *pout = out;
         memset (out, 0, sizeof (out));
         /*size_t res = */iconv (cd, &pin, &inbytesleft, &pout, &outbytesleft);
@@ -477,6 +506,9 @@ junk_read_id3v1 (playItem_t *it, DB_FILE *fp) {
     }
     else if (genreid <= 147) {
         genre = junk_genretbl[genreid];
+    }
+    else {
+        genre = "";
     }
 
     // add meta
@@ -811,6 +843,10 @@ junk_read_id3v2 (playItem_t *it, DB_FILE *fp) {
             }
             else if (version_major == 3) {
                 sz = (readptr[3] << 0) | (readptr[2] << 8) | (readptr[1] << 16) | (readptr[0] << 24);
+            }
+            else {
+                trace ("unknown id3v2 version (2.%d.%d)\n", version_major, version_minor);
+                return -1;
             }
             readptr += 4;
             trace ("got frame %s, size %d, pos %d, tagsize %d\n", frameid, sz, readptr-tag, size);
@@ -1270,14 +1306,20 @@ junk_detect_charset (const char *s) {
 
 void
 junk_recode (const char *in, int inlen, char *out, int outlen, const char *cs) {
-    iconv_t cd = iconv_open ("utf8", cs);
-    if (!cd) {
+    iconv_t cd = iconv_open (UTF8, cs);
+    if (cd == (iconv_t)-1) {
+        trace ("iconv can't recode from %s to utf8\n", cs);
+        memcpy (out, in, min(inlen, outlen));
         return;
     }
     else {
         size_t inbytesleft = inlen;
         size_t outbytesleft = outlen;
+#ifdef __linux__
         char *pin = (char*)in;
+#else
+        const char *pin = in;
+#endif
         char *pout = out;
         memset (out, 0, outlen);
         size_t res = iconv (cd, &pin, &inbytesleft, &pout, &outbytesleft);

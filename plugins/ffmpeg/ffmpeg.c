@@ -16,11 +16,35 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+//#include <alloca.h>
+#include <errno.h>
+
 #include "../../deadbeef.h"
+
+#if !FFMPEG_OLD
+
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
 #include <libavutil/avstring.h>
+
+#else
+
+#include <ffmpeg/avformat.h>
+#include <ffmpeg/avcodec.h>
+#include <ffmpeg/avutil.h>
+#include <ffmpeg/avstring.h>
+#define AVERROR_EOF AVERROR(EPIPE)
+
+#if LIBAVFORMAT_VERSION_MAJOR < 53
+#define av_register_protocol register_protocol
+#endif
+
+#endif
 
 #define trace(...) { fprintf(stderr, __VA_ARGS__); }
 //#define trace(fmt,...)
@@ -82,7 +106,7 @@ ffmpeg_init (DB_playItem_t *it) {
 
     // open file
     if ((ret = av_open_input_file(&fctx, uri, NULL, 0, NULL)) < 0) {
-        trace ("fctx is %p, ret %d/%s", fctx, ret, strerror(-ret));
+        trace ("fctx is %p, ret %d/%s\n", fctx, ret, strerror(-ret));
         return -1;
     }
 

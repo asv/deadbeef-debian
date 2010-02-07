@@ -129,9 +129,9 @@ cgme_insert (DB_playItem_t *after, const char *fname) {
                 deadbeef->pl_add_meta (it, "system", inf.system);
                 deadbeef->pl_add_meta (it, "album", inf.game);
                 int tl = sizeof (inf.song);
-                int i;
-                for (i = 0; i < tl && inf.song[i] && inf.song[i] == ' '; i++);
-                if (i == tl || !inf.song[i]) {
+                int n;
+                for (n = 0; i < tl && inf.song[n] && inf.song[n] == ' '; n++);
+                if (n == tl || !inf.song[n]) {
                     deadbeef->pl_add_meta (it, "title", NULL);
                 }
                 else {
@@ -145,7 +145,8 @@ cgme_insert (DB_playItem_t *after, const char *fname) {
                 snprintf (trk, 10, "%d", i+1);
                 deadbeef->pl_add_meta (it, "track", trk);
                 if (inf.length == -1) {
-                    deadbeef->pl_set_item_duration (it, 300);
+                    float songlength = deadbeef->conf_get_float ("gme.songlength", 3);
+                    deadbeef->pl_set_item_duration (it, songlength * 60.f);
                 }
                 else {
                     deadbeef->pl_set_item_duration (it, (float)inf.length/1000.f);
@@ -203,6 +204,20 @@ cgme_mutevoice (int voice, int mute) {
 }
 #endif
 
+static int
+cgme_start (void) {
+    return 0;
+}
+
+static int
+cgme_stop (void) {
+    return 0;
+}
+
+static const char settings_dlg[] =
+    "property \"Max song length (in minutes)\" entry gme.songlength 3;\n"
+;
+
 // define plugin interface
 static DB_decoder_t plugin = {
     DB_PLUGIN_SET_API_VERSION
@@ -214,6 +229,9 @@ static DB_decoder_t plugin = {
     .plugin.author = "Alexey Yakovenko",
     .plugin.email = "waker@users.sourceforge.net",
     .plugin.website = "http://deadbeef.sf.net",
+    .plugin.start = cgme_start,
+    .plugin.stop = cgme_stop,
+    .plugin.configdialog = settings_dlg,
     .init = cgme_init,
     .free = cgme_free,
     .read_int16 = cgme_read,

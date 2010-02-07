@@ -1,0 +1,54 @@
+Q: I have PulseAudio, and I have playback problems (noise, distortion, wrong speed, no sound, etc)
+
+A: Disable PulseAudio
+A: Try to use OSS as pulseaudio backend
+
+--
+
+Q: I don't get it. Yes, indeed I have PulseAudio, but in Deadbeef I select ALSA output, and I get playback problems.
+
+A: PulseAudio tricks applications by providing ALSA-plugin that routes sound from application to PulseAudio via ALSA API.
+
+--
+
+Q: Is it planned to support PulseAudio natively?
+
+A: Yes.
+
+--
+
+Q: Is it planned to support multiple playlists and EQ?
+
+A: Yes
+
+--
+
+Q: Is it planned to make Windows and/or OSX ports?
+
+A: No
+
+--
+
+Q: Playlist, settings, etc are not saved if I kill X session, shut down or restart computer, etc
+
+A: That is not fixed yet. But it is work in progress. Please don't bother me with that unless you have a patch that fixes it.
+
+--
+
+Q: Deadbeef takes too much CPU% when playing mp3/ogg/flac.
+
+A: Try to reduce SRC quality in preferences window
+A: Try to check "Use software ALSA resampling" box
+A: See the PulseAudio questions above
+
+--
+
+Q: Deadbeef takes too much CPU% when playing APE files.
+
+A: That's normal. Consider switching to wavpack or flac.
+
+--
+
+Q: I have 50 ideas about what features must be added to the player!!!111oneone. Can i become idea-generator of the project, so that I tell, and developers do what I ask for?
+
+A: No

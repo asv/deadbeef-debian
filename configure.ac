@@ -3,7 +3,7 @@ AC_INIT
 AC_CONFIG_HEADER(config.h)
 
 PACKAGE="deadbeef"
-VERSION="0.3.2"
+VERSION="0.3.3"
 
 AM_INIT_AUTOMAKE($PACKAGE,$VERSION)
 
@@ -19,7 +19,7 @@ case "$host" in
   i386-*-* | i486-*-* | i586-*-* | i686-*-* | i86pc-*-*)
     AC_DEFINE(ARCH_X86_32, 1, [architecture is x86])
     ;;
-  x86_64-*-*)
+  x86_64-*-* | amd64-*-*)
     AC_DEFINE(ARCH_X86_64, 1, [architecture is x86_64])
     ;;
   powerpc-*-* )
@@ -35,8 +35,8 @@ esac
 
 test "x$prefix" = xNONE && prefix=$ac_default_prefix
 
-INSANE_CFLAGS="-Wcomment -Wchar-subscripts -Wunused-function -Wunused-value -Wuninitialized -Wtype-limits -Wbad-function-cast"
-INSANE_CXXFLAGS="-Wcomment -Wchar-subscripts -Wunused-function -Wunused-value -Wuninitialized -Wtype-limits"
+dnl INSANE_CFLAGS="-Wcomment -Wchar-subscripts -Wunused-function -Wunused-value -Wuninitialized -Wtype-limits -Wbad-function-cast"
+dnl INSANE_CXXFLAGS="-Wcomment -Wchar-subscripts -Wunused-function -Wunused-value -Wuninitialized -Wtype-limits"
 
 CXXFLAGS="$CXXFLAGS $INSANE_CXXFLAGS -D_GNU_SOURCE -DLIBDIR=\\\"$libdir\\\" -DPREFIX=\\\"$prefix\\\" -DDOCDIR=\\\"$docdir\\\""
 CFLAGS="$CFLAGS $INSANE_CFLAGS -D_GNU_SOURCE -DLIBDIR=\\\"$libdir\\\" -DPREFIX=\\\"$prefix\\\" -DDOCDIR=\\\"$docdir\\\""
@@ -44,9 +44,25 @@ CFLAGS="$CFLAGS $INSANE_CFLAGS -D_GNU_SOURCE -DLIBDIR=\\\"$libdir\\\" -DPREFIX=\
 PKG_CHECK_MODULES(DEPS, samplerate)
 PKG_CHECK_MODULES(GTKUI_DEPS, gtk+-2.0 >= 2.12 gthread-2.0 glib-2.0, HAVE_GTK=1, NO_GTK=1)
 PKG_CHECK_MODULES(ALSA_DEPS, alsa, HAVE_ALSA=1, NO_ALSA=1)
-PKG_CHECK_MODULES(FFMPEG_DEPS, libavcodec libavutil libavformat >= 52.0.0, HAVE_FFMPEG=1, NO_FFMPEG=1)
+PKG_CHECK_MODULES(FFMPEG_DEPS, libavcodec >= 51.0.0 libavutil libavformat >= 52.0.0, HAVE_FFMPEG=1, NO_FFMPEG=1)
+
+AC_ARG_ENABLE(libnotify, [  --enable-libnotify  Enable support for OSD notifications], [libnotify=yes])
+
+if test "x${libnotify}" = "xyes" ; then
+PKG_CHECK_MODULES(NOTIFY_DEPS, libnotify >= 0.4.4, HAVE_NOTIFY=1, NO_NOTIFY=1)
+fi
+
 AC_CHECK_LIB([pthread], [main])
 AC_CHECK_LIB([dl], [main])
+
+AC_CHECK_HEADER([iconv.h],[],[iconv.h not found.])
+
+AC_CHECK_LIB([iconv], [main], [have_iconv=yes], [have_iconv=no])
+if test "x${have_iconv}" = "xyes" ; then
+ICONV_LIB="-liconv"
+    AC_SUBST(ICONV_LIB)
+    AC_DEFINE(HAVE_LIBICONV,1,[Use libiconv instead of glibc iconv])
+fi
 
 AX_CHECK_COMPILER_FLAGS(-msse2, HAVE_SSE2=1, [])
 if test ${HAVE_SSE2}; then
@@ -168,11 +184,72 @@ fi
 
 AM_CONDITIONAL(HAVE_FFMPEG, test $HAVE_FFMPEG)
 if test ${HAVE_FFMPEG}; then
+    dnl check headers
+    AC_CHECK_HEADER([ffmpeg/avformat.h], FFMPEG_DEPS_CFLAGS="$FFMPEG_DEPS_CFLAGS -D FFMPEG_OLD")
     FFMPEG_DIR="plugins/ffmpeg"
     AC_SUBST(FFMPEG_DEPS_CFLAGS)
     AC_SUBST(FFMPEG_DEPS_LIBS)
     AC_SUBST(FFMPEG_DIR)
 fi
+
+AM_CONDITIONAL(HAVE_NOTIFY, test $HAVE_NOTIFY)
+if test ${HAVE_NOTIFY}; then
+    AC_DEFINE(HAVE_NOTIFY,1,[Use libnotify])
+    AC_SUBST(NOTIFY_DEPS_CFLAGS)
+    AC_SUBST(NOTIFY_DEPS_LIBS)
+fi
+
+AC_CHECK_HEADER([X11/Xlib.h], HAVE_XLIB_H=yes)
+if test "x$HAVE_XLIB_H" = "xyes"; then
+    HOTKEYS_DIR="plugins/hotkeys"
+    AC_SUBST(HOTKEYS_DIR)
+fi
+
+dnl *** OSS output (partly stolen from audacious)
+have_oss=no
+
+AC_MSG_CHECKING(for OSS include dir)
+OSS_CFLAGS=""
+if test -f "/etc/oss.conf" ; then
+    for i in `cat /etc/oss.conf`; do
+        t=`echo $i | sed -e 's/OSSLIBDIR=//'`
+        if test "x$i" != "x$t" ; then
+            if test -f "$t/include/sys/soundcard.h" -o -f "$i/include/soundcard.h" ; then
+                OSS_CFLAGS="-I$t/include/sys"
+                AC_MSG_RESULT([$OSS_CFLAGS])
+                have_oss=yes
+            fi
+        fi
+    done
+else
+    AC_MSG_RESULT([not found])
+fi
+
+if test "x$have_oss" != "xyes"; then
+    AC_MSG_CHECKING(for sys/soundcard.h)
+    AC_CHECK_HEADERS(sys/soundcard.h)
+    if test "x${ac_cv_header_sys_soundcard_h}" = "xyes" ; then
+        have_oss=yes
+        AC_MSG_RESULT([found])
+    else
+        AC_MSG_RESULT([not found])
+    fi
+fi
+
+
+if test "x$have_oss" = "xyes"; then
+    OSS_DIR="plugins/oss"
+    AC_SUBST(OSS_CFLAGS)
+    AC_SUBST(OSS_DIR)
+fi
+
+dnl echo
+dnl echo "have_oss=$have_oss"
+dnl echo "OSS_CFLAGS=$OSS_CFLAGS"
+dnl echo "OSS_LIBS=$OSS_LIBS"
+dnl echo "OSS_DIR=$OSS_DIR"
+dnl echo
+
 
 dnl print summary
 echo
@@ -208,7 +285,10 @@ PRINT_PLUGIN_INFO([vfs_curl],[http/ftp streaming support],[test $HAVE_CURL])
 dnl PRINT_PLUGIN_INFO([faad2],[aac/mp4 player],[test $HAVE_FAAD && test $HAVE_MP4FF])
 PRINT_PLUGIN_INFO([cdda],[cd audio player],[test $HAVE_CDIO && test $HAVE_CDDB])
 PRINT_PLUGIN_INFO([gtkui],[GTK user interface],[test $HAVE_GTK])
+PRINT_PLUGIN_INFO([hotkeys],[Global hotkeys support],[test "x$HAVE_XLIB_H" = "xyes"])
+PRINT_PLUGIN_INFO([libnotify],[Current track notification],[test $HAVE_NOTIFY])
 PRINT_PLUGIN_INFO([ffmpeg],[ffmpeg codecs],[test $HAVE_FFMPEG])
+PRINT_PLUGIN_INFO([oss],[oss output plugin],[test "x$have_oss" = "xyes"])
 echo
 
 AC_OUTPUT([
@@ -235,6 +315,7 @@ plugins/nullout/Makefile
 plugins/vtx/Makefile
 plugins/adplug/Makefile
 plugins/ffmpeg/Makefile
+plugins/oss/Makefile
 deadbeef.desktop
 ])
 

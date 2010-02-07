@@ -19,8 +19,16 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <time.h>
+#ifdef __linux__
+#include <sys/prctl.h>
+#endif
+#ifndef __linux__
+#define _POSIX_C_SOURCE
+#endif
 #include <limits.h>
+#include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/types.h>
@@ -28,7 +36,6 @@
 #include <sys/un.h>
 #include <sys/fcntl.h>
 #include <sys/errno.h>
-#include <sys/prctl.h>
 #include <signal.h>
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -38,15 +45,22 @@
 #include "unistd.h"
 #include "threading.h"
 #include "messagepump.h"
-#include "codec.h"
 #include "streamer.h"
 #include "conf.h"
 #include "volume.h"
 #include "session.h"
 #include "plugins.h"
 
+#ifndef PATH_MAX
+#define PATH_MAX    1024    /* max # of characters in a path name */
+#endif
+
 #ifndef PREFIX
 #error PREFIX must be defined
+#endif
+
+#ifdef __linux__
+#define USE_ABSTRACT_NAME 0
 #endif
 
 // some common global variables
@@ -130,7 +144,7 @@ server_exec_command_line (const char *cmdline, int len, char *sendback, int sbsi
                 if (curr && curr->decoder) {
                     const char np[] = "nowplaying ";
                     memcpy (sendback, np, sizeof (np)-1);
-                    pl_format_title (curr, sendback+sizeof(np)-1, sbsize-sizeof(np)+1, -1, parg);
+                    pl_format_title (curr, -1, sendback+sizeof(np)-1, sbsize-sizeof(np)+1, -1, parg);
                 }
                 else {
                     strcpy (sendback, "nowplaying nothing");
@@ -140,7 +154,7 @@ server_exec_command_line (const char *cmdline, int len, char *sendback, int sbsi
                 char out[2048];
                 playItem_t *curr = streamer_get_playing_track ();
                 if (curr && curr->decoder) {
-                    pl_format_title (curr, out, sizeof (out), -1, parg);
+                    pl_format_title (curr, -1, out, sizeof (out), -1, parg);
                 }
                 else {
                     strcpy (out, "nothing");
@@ -219,21 +233,42 @@ static struct sockaddr_un srv_local;
 static struct sockaddr_un srv_remote;
 static unsigned srv_socket;
 
+#if USE_ABSTRACT_NAME
+static char server_id[] = "\0deadbeefplayer";
+#endif
+
 int
 server_start (void) {
+    fprintf (stderr, "server_start\n");
     srv_socket = socket (AF_UNIX, SOCK_STREAM, 0);
     int flags;
     flags = fcntl (srv_socket, F_GETFL,0);
     if (flags == -1) {
-        fprintf (stderr, "server_start failed, flags == -1\n");
+        perror ("fcntl F_GETFL");
         return -1;
     }
-    fcntl(srv_socket, F_SETFL, flags | O_NONBLOCK);
-    srv_local.sun_family = AF_UNIX;  /* local is declared before socket() ^ */
-    snprintf (srv_local.sun_path, 108, "%s/socket", dbconfdir);
-    unlink(srv_local.sun_path);
-    int len = strlen(srv_local.sun_path) + sizeof(srv_local.sun_family);
-    bind(srv_socket, (struct sockaddr *)&srv_local, len);
+    if (fcntl(srv_socket, F_SETFL, flags | O_NONBLOCK) < 0) {
+        perror ("fcntl F_SETFL");
+        return -1;
+    }
+    memset (&srv_local, 0, sizeof (srv_local));
+    srv_local.sun_family = AF_UNIX;
+
+#if USE_ABSTRACT_NAME
+    memcpy (srv_local.sun_path, server_id, sizeof (server_id));
+    int len = offsetof(struct sockaddr_un, sun_path) + sizeof (server_id)-1;
+#else
+    snprintf (srv_local.sun_path, sizeof (srv_local.sun_path), "%s/socket", dbconfdir);
+    if (unlink(srv_local.sun_path) < 0) {
+        perror ("INFO: unlink socket");
+    }
+    int len = offsetof(struct sockaddr_un, sun_path) + strlen (srv_local.sun_path);
+#endif
+
+    if (bind(srv_socket, (struct sockaddr *)&srv_local, len) < 0) {
+        perror ("bind");
+        return -1;
+    }
 
     if (listen(srv_socket, 5) == -1) {
         perror("listen");
@@ -262,7 +297,7 @@ server_update (void) {
     }
     else if (s2 != -1) {
         char str[2048];
-        char sendback[1024];
+        char sendback[1024] = "";
         int size;
         if ((size = recv (s2, str, 2048, 0)) >= 0) {
             if (size == 1 && str[0] == 0) {
@@ -383,8 +418,11 @@ sigterm_handler (int sig) {
 
 int
 main (int argc, char *argv[]) {
+    fprintf (stderr, "starting deadbeef " VERSION "\n");
     srand (time (NULL));
+#ifdef __linux__
     prctl (PR_SET_NAME, "deadbeef-main", 0, 0, 0, 0);
+#endif
     char *homedir = getenv ("HOME");
     if (!homedir) {
         fprintf (stderr, "unable to find home directory. stopping.\n");
@@ -475,9 +513,15 @@ main (int argc, char *argv[]) {
         exit(1);
     }
 
+    memset (&remote, 0, sizeof (remote));
     remote.sun_family = AF_UNIX;
-    snprintf (remote.sun_path, 108, "%s/socket", dbconfdir);
-    len = strlen(remote.sun_path) + sizeof(remote.sun_family);
+#if USE_ABSTRACT_NAME
+    memcpy (remote.sun_path, server_id, sizeof (server_id));
+    len = offsetof(struct sockaddr_un, sun_path) + sizeof (server_id)-1;
+#else
+    snprintf (remote.sun_path, sizeof (remote.sun_path), "%s/socket", dbconfdir);
+    len = offsetof(struct sockaddr_un, sun_path) + strlen (remote.sun_path);
+#endif
     if (connect(s, (struct sockaddr *)&remote, len) == 0) {
         if (argc <= 1) {
             cmdline[0] = 0;
@@ -489,8 +533,9 @@ main (int argc, char *argv[]) {
             perror ("send");
             exit (-1);
         }
-        char out[2048];
-        if (recv(s, out, sizeof (out), 0) == -1) {
+        char out[2048] = "";
+        ssize_t sz = recv(s, out, sizeof (out), 0);
+        if (sz == -1) {
             fprintf (stderr, "failed to pass args to remote!\n");
             exit (-1);
         }
@@ -506,12 +551,15 @@ main (int argc, char *argv[]) {
                 const char *prn = &out[sizeof (err)-1];
                 fwrite (prn, 1, strlen (prn), stderr);
             }
-            else if (out[0]) {
-                fprintf (stderr, "got unkown response:\n%s\n", out);
+            else if (sz > 0 && out[0]) {
+                fprintf (stderr, "got unknown response:\nlength=%d\n%s\n", sz, out);
             }
         }
         close (s);
         exit (0);
+    }
+    else {
+        perror ("INFO: failed to connect to existing session:");
     }
     close(s);
 
@@ -523,13 +571,9 @@ main (int argc, char *argv[]) {
     }
 
 
-    signal (SIGTERM, sigterm_handler);
-
     conf_load (); // required by some plugin at startup
     messagepump_init (); // required to push messages while handling commandline
     plug_load_all (); // required to add files to playlist from commandline
-
-    atexit (atexit_handler); // helps to save in simple cases, like xkill
 
     // execute server commands in local context
     int noloadpl = 0;
@@ -548,7 +592,11 @@ main (int argc, char *argv[]) {
     }
 
     // become a server
-    server_start ();
+    if (server_start () < 0) {
+        exit (-1);
+    }
+    signal (SIGTERM, sigterm_handler);
+    atexit (atexit_handler); // helps to save in simple cases, like xkill
 
     // start all subsystems
     volume_set_db (conf_get_float ("playback.volume", 0));
@@ -557,7 +605,6 @@ main (int argc, char *argv[]) {
     }
     plug_trigger_event_playlistchanged ();
     session_load (sessfile);
-    codec_init_locking ();
     streamer_init ();
 
     // this runs in main thread (blocks right here)
@@ -581,7 +628,6 @@ main (int argc, char *argv[]) {
     plug_unload_all ();
 
     // at this point we can simply do exit(0), but let's clean up for debugging
-    codec_free_locking ();
     session_save (sessfile);
     pl_free ();
     conf_free ();

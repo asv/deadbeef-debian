@@ -180,6 +180,9 @@ auth (void) {
     if (lfm_sess[0]) {
         return 0;
     }
+    if (!lfm_user[0] || !lfm_pass[0]) {
+        return -1;
+    }
     char req[4096];
     time_t timestamp = time(NULL);
     uint8_t sig[16];
@@ -662,7 +665,7 @@ lfm_thread (void *ctx) {
 
         trace ("lfm sending nowplaying...\n");
         // try to send nowplaying
-        if (lfm_nowplaying[0]) {
+        if (lfm_nowplaying[0] && !deadbeef->conf_get_int ("lastfm.disable_np", 0)) {
             lfm_send_nowplaying ();
         }
         lfm_send_submissions ();
@@ -798,6 +801,7 @@ static const char settings_dlg[] =
     "property Username entry lastfm.login \"\";\n"
     "property Password password lastfm.password \"\";"
     "property \"Scrobble URL\" entry lastfm.scrobbler_url \""SCROBBLER_URL_LFM"\";"
+    "property \"Disable nowplaying\" checkbox lastfm.disable_np 0;"
 ;
 
 // define plugin interface

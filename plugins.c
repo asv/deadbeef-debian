@@ -21,7 +21,12 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+//#include <alloca.h>
 #include <string.h>
+#ifndef __linux__
+#define _POSIX_C_SOURCE
+#endif
+#include <limits.h>
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
@@ -37,6 +42,13 @@
 #include "conf.h"
 #include "junklib.h"
 #include "vfs.h"
+
+#define trace(...) { fprintf(stderr, __VA_ARGS__); }
+//#define trace(fmt,...)
+
+#ifndef PATH_MAX
+#define PATH_MAX    1024    /* max # of characters in a path name */
+#endif
 
 //#define DISABLE_VERSIONCHECK 1
 
@@ -118,7 +130,7 @@ static DB_functions_t deadbeef_api = {
     .pl_get_last = (DB_playItem_t *(*) (int))pl_get_last,
     .pl_get_next = (DB_playItem_t *(*) (DB_playItem_t *, int))pl_get_next,
     .pl_get_prev = (DB_playItem_t *(*) (DB_playItem_t *, int))pl_get_prev,
-    .pl_format_title = (int (*) (DB_playItem_t *it, char *s, int size, int id, const char *fmt))pl_format_title,
+    .pl_format_title = (int (*) (DB_playItem_t *it, int idx, char *s, int size, int id, const char *fmt))pl_format_title,
     .pl_format_item_display_name = (void (*) (DB_playItem_t *it, char *str, int len))pl_format_item_display_name,
     .pl_move_items = (void (*) (int iter, DB_playItem_t *drop_before, uint32_t *indexes, int count))pl_move_items,
     .pl_search_reset = pl_search_reset,
@@ -126,6 +138,7 @@ static DB_functions_t deadbeef_api = {
     // metainfo
     .pl_add_meta = (void (*) (DB_playItem_t *, const char *, const char *))pl_add_meta,
     .pl_find_meta = (const char *(*) (DB_playItem_t *, const char *))pl_find_meta,
+    .pl_replace_meta = (void (*) (DB_playItem_t *, const char *, const char *))pl_replace_meta,
     .pl_delete_all_meta = (void (*) (DB_playItem_t *it))pl_delete_all_meta,
     // cuesheet support
     .pl_insert_cue_from_buffer = (DB_playItem_t *(*) (DB_playItem_t *after, DB_playItem_t *origin, const uint8_t *buffer, int buffersize, int numsamples, int samplerate))pl_insert_cue_from_buffer,
@@ -147,6 +160,8 @@ static DB_functions_t deadbeef_api = {
     .junk_read_ape = (int (*)(DB_playItem_t *it, DB_FILE *fp))junk_read_ape,
     .junk_get_leading_size = junk_get_leading_size,
     .junk_copy = (void (*)(DB_playItem_t *from, DB_playItem_t *first, DB_playItem_t *last))junk_copy,
+    .junk_detect_charset = junk_detect_charset,
+    .junk_recode = junk_recode,
     // vfs
     .fopen = vfs_fopen,
     .fclose = vfs_fclose,
@@ -324,6 +339,9 @@ plug_quit (void) {
 /////// non-api functions (plugin support)
 void
 plug_event_call (DB_event_t *ev) {
+    if (!mutex) {
+        trace ("plug: event passed before plugin initialization\n");
+    }
     ev->time = time (NULL);
 //    printf ("plug_event_call enter %d\n", ev->event);
     mutex_lock (mutex);
@@ -441,6 +459,7 @@ plug_load_all (void) {
     fprintf (stderr, "\033[0;31mDISABLE_VERSIONCHECK=1! do not distribute!\033[0;m\n");
 #endif
     const char *conf_blacklist_plugins = conf_get_str ("blacklist_plugins", "");
+    trace ("plug: mutex_create\n");
     mutex = mutex_create ();
     const char *dirname = LIBDIR "/deadbeef";
     struct dirent **namelist = NULL;
@@ -724,9 +743,16 @@ plug_reinit_sound (void) {
         fprintf (stderr, "failed to select output plugin %s\nreverted to %s\n", outplugname, prev->plugin.name);
         output_plugin = prev;
     }
-    p_init ();
+    streamer_reset (1);
+    if (p_init () < 0) {
+        streamer_set_nextsong (-2, 0);
+        return;
+    }
 
     if (state != OUTPUT_STATE_PAUSED && state != OUTPUT_STATE_STOPPED) {
-        p_play ();
+        if (p_play () < 0) {
+            fprintf (stderr, "failed to reinit sound output\n");
+            streamer_set_nextsong (-2, 0);
+        }
     }
 }
