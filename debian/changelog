@@ -1,3 +1,10 @@
+deadbeef (0.3.3-1) unstable; urgency=low
+
+  * New upstream release, deadbeef 0.3.3.
+  * Update control, manpage.
+
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sun, 07 Feb 2010 15:42:11 +0500
+
 deadbeef (0.3.2-1) unstable; urgency=low
 
   * New upstream release, deadbeef 0.3.2.

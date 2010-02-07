@@ -38,7 +38,7 @@ Architecture: any
 Depends: ${shlibs:Depends}
 Recommends: libflac8, libvorbis0a, libvorbisfile3, libmad0,
             libogg0, libwavpack1, libsndfile1, libcddb2, libcdio7,
-            libavformat52, libavcodec52, libavutil49
+            libavformat52, libavcodec51, libavutil49
 Suggests: libcurl3-gnutls
 Description: ultimate music player for GNU/Linux systems
  DeaDBeeF (as in 0xDEADBEEF) is an audio player for GNU/Linux systems with X11.
