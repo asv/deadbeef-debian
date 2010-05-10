@@ -1,0 +1,7 @@
+usr/bin/*
+usr/lib/deadbeef/*.so.*
+usr/lib/deadbeef/*.so
+usr/share/applications/*
+usr/share/deadbeef/*
+usr/share/doc/*
+usr/share/icons/*
