@@ -23,7 +23,7 @@ Build-Depends: debhelper (>= 7.0.50),
                libdbus-1-dev,
                libpango1.0-dev,
                libx11-dev
-Standards-Version: 3.8.3
+Standards-Version: 3.8.4
 Homepage: http://deadbeef.sourceforge.net/
 
 Package: deadbeef-plugins-dev
