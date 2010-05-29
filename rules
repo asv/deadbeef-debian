@@ -10,7 +10,7 @@ override_dh_makeshlibs:
 
 override_dh_shlibdeps:
 	dh_shlibdeps -Xflac.so -Xlastfm.so -Xmpgmad.so -Xffmpeg.so \
-		-Xvorbis.so -Xsndfile.so -Xwavpack.so -Xcdda.so -Xvfs_curl.so \
+		-Xvorbis.so -Xsndfile.so -Xwavpack.so -Xvfs_curl.so \
 		-Xnotify.so -Xpulse.so
 
 override_dh_compress:
