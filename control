@@ -3,6 +3,7 @@ Section: sound
 Priority: optional
 Maintainer: Alexey Smirnov <alexey.smirnov@gmx.com>
 Build-Depends: debhelper (>= 7.0.50),
+               quilt,
                autotools-dev,
                libasound2-dev,
                libcddb2-dev,

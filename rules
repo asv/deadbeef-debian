@@ -1,9 +1,9 @@
 #! /usr/bin/make -f
 
-#  export DH_ALWAYS_EXCLUDE := COPYING
+export DH_ALWAYS_EXCLUDE := COPYING:COPYING.GPLv2:COPYING.LGPLv2.1
 
 %:
-	dh $@
+	dh --with quilt $@
 
 override_dh_makeshlibs:
 	dh_makeshlibs -n
@@ -13,5 +13,12 @@ override_dh_shlibdeps:
 		-Xvorbis.so -Xsndfile.so -Xwavpack.so -Xvfs_curl.so \
 		-Xnotify.so -Xpulse.so
 
+override_dh_install:
+	dh_install
+	@cp ChangeLog debian/deadbeef/usr/share/doc/deadbeef/changelog.deadbeef
+
+override_dh_installchangelogs:
+	dh_installchangelogs -k ChangeLog
+
 override_dh_compress:
-	dh_compress -XCOPYING.GPLv2 -XCOPYING.LGPLv2.1
+	dh_compress -Xchangelog.deadbeef
