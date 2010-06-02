@@ -28,7 +28,7 @@ Standards-Version: 3.8.4
 Homepage: http://deadbeef.sourceforge.net/
 
 Package: deadbeef-plugins-dev
-Section: devel
+Section: libdevel
 Architecture: all
 Depends: deadbeef (= ${binary:Version})
 Description: DeaDBeeF plugins development files
@@ -38,6 +38,7 @@ Description: DeaDBeeF plugins development files
  for DeaDBeeF audio player.
 
 Package: deadbeef
+Section: sound
 Architecture: any
 Depends: ${shlibs:Depends}
 Recommends: libflac8, libvorbis0a, libvorbisfile3, libmad0,
