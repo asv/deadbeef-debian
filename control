@@ -42,7 +42,7 @@ Section: sound
 Architecture: any
 Depends: ${shlibs:Depends}
 Recommends: libflac8, libvorbis0a, libvorbisfile3, libmad0,
-            libogg0, libwavpack1, libsndfile1, libpulse0, libdbus-1-3
+            libogg0, libwavpack1, libsndfile1, libpulse0, libdbus-1-3,
             libavformat52 | libavformat-extra-52,
             libavcodec52 | libavcodec-extra-52,
             libavutil49 | libavutil-extra-49
