@@ -10,8 +10,8 @@ override_dh_makeshlibs:
 
 override_dh_shlibdeps:
 	dh_shlibdeps -Xflac.so -Xlastfm.so -Xmpgmad.so -Xffmpeg.so \
-		-Xvorbis.so -Xsndfile.so -Xwavpack.so -Xvfs_curl.so \
-		-Xnotify.so -Xpulse.so
+		-Xvorbis.so -Xsndfile.so -Xwavpack.so -Xcdda.so -Xvfs_curl.so \
+		-Xnotify.so -Xpulse.so -Xmms.so -Xao.so -Xaac.so -Xdca.so
 
 override_dh_install:
 	dh_install
@@ -21,4 +21,4 @@ override_dh_installchangelogs:
 	dh_installchangelogs -k ChangeLog
 
 override_dh_compress:
-	dh_compress -Xchangelog.deadbeef
+	dh_compress -Xchangelog.deadbeef -Xabout.txt

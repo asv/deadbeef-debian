@@ -1,13 +1,11 @@
-diff --git a/plugins/gtkui/callbacks.c b/plugins/gtkui/callbacks.c
-index 6160eae..24a3d2c 100644
 --- a/plugins/gtkui/callbacks.c
 +++ b/plugins/gtkui/callbacks.c
-@@ -678,7 +678,7 @@ void
- on_changelog1_activate                 (GtkMenuItem     *menuitem,
-                                         gpointer         user_data)
- {
--    show_info_window (DOCDIR "/ChangeLog", "DeaDBeeF " VERSION " ChangeLog", &changelogwindow);
-+    show_info_window (DOCDIR "/changelog.deadbeef", "DeaDBeeF " VERSION " ChangeLog", &changelogwindow);
+@@ -715,7 +715,7 @@
+     char s[200];
+     snprintf (s, sizeof (s), _("DeaDBeeF %s ChangeLog"), VERSION);
+     char fname[PATH_MAX];
+-    snprintf (fname, sizeof (fname), DOCDIR "/%s", "ChangeLog");
++    snprintf (fname, sizeof (fname), DOCDIR "/%s", "changelog.deadbeef");
+     show_info_window (fname, s, &changelogwindow);
  }
  
- static GtkWidget *gplwindow;

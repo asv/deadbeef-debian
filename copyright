@@ -94,16 +94,33 @@ sid/sidplay-libs-2.1.0/*: commodore 64 SID emulation library
 
 plugins/adplug/adplug/*: Replayer for many OPL2/OPL3 audio file formats.
     Copyright © 1999 - 2006 Simon Peter <dn.tlp@gmx.net>, et al.
-    License under LGPL license.
+    Licensed under LGPL license.
 
 plugins/adplug/libbinio/*: binary I/O stream class library
     Copyright (C) 2002-2004 Simon Peter <dn.tlp@gmx.net>
-    License under LGPL license.
+    Licensed under LGPL license.
 
 plugins/vtx/ay8912.c, plugins/vtx/ayemu.h, plugins/vtx/ayemu_8912.h,
 plugins/vtx/auemu_vtxfile.h: AY/YM sound chip emulator and music file loader
     Copyright (C) 2003-2004 Sashnov Alexander <sashnov@ngs.ru>
-    License under LGPL license.
+    Licensed under LGPL license.
+
+plugins/ao: Audio Overload SDK
+    Different parts of this software are covered by the following free software
+    licenses:
+      BSD license: Copyright (c) 2007-2009, R. Belmont and Richard Bannister.
+      MAME license: Copyright (c) 1997-2008, Nicola Salmoria and the MAME team.
+      GPL license: Copyright (c) 2002-2003, 2002 by Pete Bernert.
+
+plugins/dca: library for decoding DTS Coherent Acoustics streams
+    Copyright (C) 2004 Gildas Bazin <gbazin@videolan.org>
+    Copyright (C) 2000-2003 Michel Lespinasse <walken@zoy.org>
+    Copyright (C) 1999-2000 Aaron Holtzman <aholtzma@ess.engr.uvic.ca>
+    Is distributed under the terms of GPL license.
+
+plugins/tta/ttadec.[hc],filter.h: TTA Hardware Players Library
+    Copyright (C) 2004 Alexander Djourik.
+    Is distributed under the terms of BSD license.
 
 The Debian packaging is (C) 2009, Alexey Smirnov <alexey.smirnov@gmx.com> and
 is licensed under the GPL, see above.

@@ -1,20 +1,22 @@
+diff --git a/plugins/gtkui/callbacks.c b/plugins/gtkui/callbacks.c
+index 0280c77..c670431 100644
 --- a/plugins/gtkui/callbacks.c
 +++ b/plugins/gtkui/callbacks.c
-@@ -687,7 +687,7 @@
- on_gpl1_activate                       (GtkMenuItem     *menuitem,
+@@ -726,7 +726,7 @@ on_gpl1_activate                       (GtkMenuItem     *menuitem,
                                          gpointer         user_data)
  {
--    show_info_window (DOCDIR "/COPYING.GPLv2", "GNU GENERAL PUBLIC LICENSE Version 2", &gplwindow);
-+    show_info_window ("/usr/share/common-licenses/GPL-2", "GNU GENERAL PUBLIC LICENSE Version 2", &gplwindow);
+     char fname[PATH_MAX];
+-    snprintf (fname, sizeof (fname), DOCDIR "/%s", "COPYING.GPLv2");
++    snprintf (fname, sizeof (fname), "/usr/share/common-licenses/%s", "GPL-2");
+     show_info_window (fname, "GNU GENERAL PUBLIC LICENSE Version 2", &gplwindow);
  }
  
- static GtkWidget *lgplwindow;
-@@ -696,7 +696,7 @@
- on_lgpl1_activate                      (GtkMenuItem     *menuitem,
+@@ -737,7 +737,7 @@ on_lgpl1_activate                      (GtkMenuItem     *menuitem,
                                          gpointer         user_data)
  {
--    show_info_window (DOCDIR "/COPYING.LGPLv2.1", "GNU LESSER GENERAL PUBLIC LICENSE Version 2.1", &lgplwindow);
-+    show_info_window ("/usr/share/common-licenses/LGPL-2.1", "GNU LESSER GENERAL PUBLIC LICENSE Version 2.1", &lgplwindow);
+     char fname[PATH_MAX];
+-    snprintf (fname, sizeof (fname), DOCDIR "/%s", "COPYING.LGPLv2.1");
++    snprintf (fname, sizeof (fname), "/usr/share/common-licenses/%s", "LGPL-2.1");
+     show_info_window (fname, "GNU LESSER GENERAL PUBLIC LICENSE Version 2.1", &lgplwindow);
  }
- 
  
