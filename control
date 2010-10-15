@@ -4,6 +4,7 @@ Priority: optional
 Maintainer: Alexey Smirnov <alexey.smirnov@gmx.com>
 Build-Depends: debhelper (>= 7.0.50),
                quilt (>= 0.46.7),
+               intltool (>= 0.40.0),
                autotools-dev,
                libasound2-dev,
                libcddb2-dev,
@@ -33,7 +34,7 @@ Homepage: http://deadbeef.sourceforge.net/
 Package: deadbeef-plugins-dev
 Section: libdevel
 Architecture: all
-Depends: deadbeef (= ${binary:Version}), ${misc:Depends}
+Depends: deadbeef (= ${source:Version}), ${misc:Depends}
 Description: DeaDBeeF plugins development files
  DeaDBeeF (as in 0xDEADBEEF) is an audio player for GNU/Linux systems with X11.
  .
