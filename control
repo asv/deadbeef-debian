@@ -24,7 +24,6 @@ Build-Depends: debhelper (>= 7.0.50),
                libpulse-dev,
                libdbus-1-dev,
                libpango1.0-dev,
-               libmms-dev,
                libfaad-dev,
                zlib1g-dev,
                libx11-dev
@@ -45,7 +44,7 @@ Package: deadbeef
 Section: sound
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Recommends: libflac8, libvorbis0a, libvorbisfile3, libmad0, libmms0, zlib1g,
+Recommends: libflac8, libvorbis0a, libvorbisfile3, libmad0, zlib1g,
             libogg0, libwavpack1, libsndfile1, libpulse0, libdbus-1-3,
             libavformat52 | libavformat-extra-52,
             libavcodec52 | libavcodec-extra-52,
