@@ -1,3 +1,10 @@
+deadbeef (0.4.4-1) UNRELEASED; urgency=low
+
+  * New upstream release, deadbeef 0.4.4.
+  * Added debugging version of package.
+
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sun, 28 Nov 2010 23:54:05 +0500
+
 deadbeef (0.4.3-1) UNRELEASED; urgency=low
 
   * New upstream release, deadbeef 0.4.3.
