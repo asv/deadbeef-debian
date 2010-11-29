@@ -1,4 +1,4 @@
-deadbeef (0.4.4-1) UNRELEASED; urgency=low
+deadbeef (0.4.4-1lenny0) UNRELEASED; urgency=low
 
   * New upstream release, deadbeef 0.4.4.
   * Added debugging version of package.
