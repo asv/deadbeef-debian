@@ -1,16 +1,8 @@
-deadbeef (0.4.4-1) UNRELEASED; urgency=low
+deadbeef (0.5.999-1) UNRELEASED; urgency=low
 
-  * New upstream release, deadbeef 0.4.4.
-  * Added debugging version of package.
+  * Development snapshot.
 
- -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sun, 28 Nov 2010 23:54:05 +0500
-
-deadbeef (0.4.3-1) UNRELEASED; urgency=low
-
-  * New upstream release, deadbeef 0.4.3.
-  * Remove libmms depend. libmms bundled.
-
- -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sun, 31 Oct 2010 20:14:06 +0500
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sat, 16 Oct 2010 11:02:54 +0600
 
 deadbeef (0.4.2-1) UNRELEASED; urgency=low
 
