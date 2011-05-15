@@ -1,27 +1,53 @@
-deadbeef (0.4.4-1) UNRELEASED; urgency=low
+deadbeef (0.5.0-1~maverick~ppa1) maverick; urgency=low
 
-  * New upstream release, deadbeef 0.4.4.
-  * Added debugging version of package.
+  * New upstream release, deadbeef 0.5.0.
+  * Update control, manpage, rules files.
 
- -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sun, 28 Nov 2010 23:54:05 +0500
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Mon, 16 May 2011 01:05:59 +0600
 
-deadbeef (0.4.3-1) UNRELEASED; urgency=low
+deadbeef (0.4.4-1~maverick1~ppa1) maverick; urgency=low
+
+  * New upstream release, deadbeef 0.4.4 (bug fix only).
+  * Added package with debugging symbols.
+
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sun, 14 Nov 2010 23:34:31 +0500
+
+deadbeef (0.4.3-1~maverick1~ppa1) maverick; urgency=low
 
   * New upstream release, deadbeef 0.4.3.
   * Remove libmms depend. libmms bundled.
 
  -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sun, 31 Oct 2010 20:14:06 +0500
 
-deadbeef (0.4.2-1) UNRELEASED; urgency=low
+deadbeef (0.4.2-1~maverick3~ppa2) maverick; urgency=low
+
+  * Add libfaad2 instead of missing libfaad0.
+  * Add freeparts as recommend depend.
+
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sat, 16 Oct 2010 14:22:09 +0600
+
+deadbeef (0.4.2-1~maverick3~ppa1) maverick; urgency=low
 
   * New upstream release, deadbeef 0.4.2.
   * Add depends: libmms0, zlib1g, libfaad0.
   * Some update copyright.
   * Updates patches.
 
- -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sat, 16 Oct 2010 00:13:43 +0600
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sat, 16 Oct 2010 00:19:55 +0600
 
-deadbeef (0.4.1-2) UNRELEASED; urgency=low
+deadbeef (0.4.1-1~maverick1~ppa2) maverick; urgency=low
+
+  * Fix libavutil version for maverick.
+
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Tue, 12 Oct 2010 01:11:04 +0600
+
+deadbeef (0.4.1-1~maverick1~ppa1) maverick; urgency=low
+
+  * Backporting to Ubuntu 10.10 Maverick Meerkat.
+
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sat, 28 Aug 2010 11:38:30 +0600
+
+deadbeef (0.4.1-1~karmic1~ppa3) karmic; urgency=low
 
   * Fix lintian warnings.
   * Add libavformat-extra-52, libavcodec-extra-52, libavutil-extra-49 as a
@@ -29,7 +55,13 @@ deadbeef (0.4.1-2) UNRELEASED; urgency=low
 
  -- Alexey Smirnov <alexey.smirnov@gmx.com>  Thu, 03 Jun 2010 02:54:54 +0600
 
-deadbeef (0.4.1-1) UNRELEASED; urgency=low
+deadbeef (0.4.1-1~karmic~ppa2) karmic; urgency=low
+
+  * No compress ChangeLog (temporary fix).
+
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sun, 30 May 2010 01:28:57 +0600
+
+deadbeef (0.4.1-1~karmic~ppa1) karmic; urgency=low
 
   * New upstream release, deadbeef 0.4.1.
   * Move libcddb2/libcdio7 to more strong depends.
