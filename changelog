@@ -1,3 +1,10 @@
+deadbeef (0.5.0-1) UNRELEASED; urgency=low
+
+  * New upstream release, deadbeef 0.5.0.
+  * Update control, manpage, rules files.
+
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sun, 16 May 2011 02:04:33 +0600
+
 deadbeef (0.4.4-1) UNRELEASED; urgency=low
 
   * New upstream release, deadbeef 0.4.4.
