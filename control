@@ -48,9 +48,9 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: libflac8, libvorbis0a, libvorbisfile3, libmad0, libzip1, zlib1g,
             libogg0, libwavpack1, libsndfile1, libpulse0, libdbus-1-3,
-            libavformat52 | libavformat-extra-52,
-            libavcodec52 | libavcodec-extra-52,
-            libavutil50 | libavutil-extra-50, libfaad2, libimlib2, libsamplerate0,
+            libavformat53 | libavformat-extra-53,
+            libavcodec53 | libavcodec-extra-53,
+            libavutil51 | libavutil-extra-51, libfaad2, libimlib2, libsamplerate0,
             libcddb2, libcdio10
 Suggests: libcurl3-gnutls
 Description: ultimate music player for GNU/Linux systems
