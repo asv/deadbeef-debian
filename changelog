@@ -1,3 +1,10 @@
+deadbeef (0.5.2-1~oneiric~ppa1) oneiric; urgency=low
+
+  * New upstream release, deadbeef 0.5.2.
+  * Added build depend: yasm.
+
+ -- Alexey Smirnov <alexey.smirnov@gmx.com>  Sun, 25 Mar 2012 10:15:14 +0600
+
 deadbeef (0.5.1-1~oneiric~ppa2) oneiric; urgency=low
 
   * Patch for fixing compile errors resulting from latest
