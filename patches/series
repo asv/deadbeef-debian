@@ -1,5 +1,3 @@
 changelog_fix.patch
 debian_native_copying.patch
 potfiles-skip-pc.patch
-ffmpeg-define-fallback-macro-AV_VERSION_INT.patch
-ffmpeg-version-check-fix.patch
