@@ -28,7 +28,8 @@ Build-Depends: debhelper (>= 7.0.50),
                libimlib2-dev,
                libzip-dev,
                zlib1g-dev,
-               libx11-dev
+               libx11-dev,
+               yasm
 Standards-Version: 3.9.1
 Homepage: http://deadbeef.sourceforge.net/
 
