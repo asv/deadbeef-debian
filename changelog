@@ -1,4 +1,4 @@
-deadbeef (v0.5.2-1) UNRELEASED; urgency=low
+deadbeef (0.5.2-1) UNRELEASED; urgency=low
 
   * New upstream release, deadbeef 0.5.2.
   * Added new builds depend yasm.
